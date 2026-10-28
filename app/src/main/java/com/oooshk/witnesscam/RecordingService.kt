@@ -11,7 +11,6 @@ import android.os.PowerManager
 import android.util.Log
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.CompositionSettings
 import androidx.camera.core.ConcurrentCamera.SingleCameraConfig
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
@@ -66,10 +65,18 @@ class RecordingService : LifecycleService() {
     private val overlayThread = HandlerThread("overlay").apply { start() }
     private val overlayHandler by lazy { android.os.Handler(overlayThread.looper) }
 
+    /** One camera being recorded to its own series of files. */
+    private class CameraOutput(
+        val tag: String,
+        val capture: VideoCapture<Recorder>,
+        val overlay: TimestampOverlay,
+        val withAudio: Boolean,
+    ) {
+        var recording: Recording? = null
+    }
+
     private var provider: ProcessCameraProvider? = null
-    private var videoCapture: VideoCapture<Recorder>? = null
-    private var overlay: TimestampOverlay? = null
-    private var recording: Recording? = null
+    private val outputs = mutableListOf<CameraOutput>()
     private var segmentIndex = 0
     private var segmentJob: Job? = null
     private var alertsJob: Job? = null
@@ -144,97 +151,127 @@ class RecordingService : LifecycleService() {
         }
     }
 
-    /** Binds front+back together when the device supports it, otherwise just the back camera. */
+    /**
+     * Binds the cameras. When the phone supports it and the user hasn't turned it off, the front
+     * camera records to its own files alongside the rear camera; otherwise only the rear camera
+     * records. Returns true in dual-camera mode.
+     */
     private suspend fun bindCameras(): Boolean {
         val provider = ProcessCameraProvider.getInstance(this).await().also { provider = it }
         provider.unbindAll()
+        outputs.clear()
 
+        val pair = if (prefs.dualCamera) {
+            provider.availableConcurrentCameraInfos.firstOrNull { infos ->
+                infos.any { it.isBack() } && infos.any { it.isFront() }
+            }
+        } else {
+            null
+        }
+        if (pair != null) {
+            try {
+                val rear = newOutput(TAG_REAR, VIDEO_BITRATE, withAudio = true)
+                val front = newOutput(TAG_FRONT, FRONT_VIDEO_BITRATE, withAudio = false)
+                val rearPreview = newPreview().also { rearPreviewUseCase = it; it.setSurfaceProvider(rearSurfaceProvider) }
+                val frontPreview = newPreview().also { frontPreviewUseCase = it; it.setSurfaceProvider(frontSurfaceProvider) }
+                // Separate use cases per camera ("non-composition" mode): each camera records its
+                // own full-frame file with its own timestamp overlay.
+                provider.bindToLifecycle(
+                    listOf(
+                        SingleCameraConfig(pair.first { it.isBack() }.cameraSelector, rear.group(rearPreview), this),
+                        SingleCameraConfig(pair.first { it.isFront() }.cameraSelector, front.group(frontPreview), this),
+                    )
+                )
+                outputs += rear
+                outputs += front
+                return true
+            } catch (e: Exception) {
+                Log.w(TAG, "Concurrent cameras failed, falling back to one camera", e)
+                provider.unbindAll()
+                outputs.forEach { it.overlay.close() }
+                outputs.clear()
+                frontPreviewUseCase = null
+            }
+        }
+
+        val hasBack = provider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)
+        val output = newOutput(if (hasBack) TAG_REAR else TAG_FRONT, VIDEO_BITRATE, withAudio = true)
+        val preview = newPreview().also { rearPreviewUseCase = it; it.setSurfaceProvider(rearSurfaceProvider) }
+        provider.bindToLifecycle(
+            this,
+            if (hasBack) CameraSelector.DEFAULT_BACK_CAMERA else CameraSelector.DEFAULT_FRONT_CAMERA,
+            output.group(preview),
+        )
+        outputs += output
+        return false
+    }
+
+    private fun newOutput(tag: String, bitrate: Int, withAudio: Boolean): CameraOutput {
         val recorder = Recorder.Builder()
             .setQualitySelector(
                 QualitySelector.from(Quality.HD, FallbackStrategy.lowerQualityOrHigherThan(Quality.SD))
             )
-            .setTargetVideoEncodingBitRate(VIDEO_BITRATE)
+            .setTargetVideoEncodingBitRate(bitrate)
             .build()
-        val capture = VideoCapture.withOutput(recorder).also { videoCapture = it }
-        val preview = Preview.Builder()
-            .setResolutionSelector(
-                ResolutionSelector.Builder()
-                    .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
-                    .build()
-            )
-            .build()
-        preview.setSurfaceProvider(previewSurfaceProvider)
-        previewUseCase = preview
-
-        val overlay = TimestampOverlay(overlayHandler, location) {
-            if (_status.value.dualCamera) "WitnessCam  front+rear" else "WitnessCam"
-        }.also { this.overlay = it }
-        val group = UseCaseGroup.Builder()
-            .addUseCase(preview)
-            .addUseCase(capture)
-            .addEffect(overlay.effect)
-            .build()
-
-        val pair = provider.availableConcurrentCameraInfos.firstOrNull { infos ->
-            infos.any { it.isBack() } && infos.any { it.isFront() }
-        }
-        if (pair != null) {
-            try {
-                val back = pair.first { it.isBack() }
-                val front = pair.first { it.isFront() }
-                // Rear camera fills the frame; front camera is a picture-in-picture in the corner.
-                val primary = SingleCameraConfig(
-                    back.selector(), group,
-                    CompositionSettings.Builder().setAlpha(1f).setOffset(0f, 0f).setScale(1f, 1f).build(),
-                    this,
-                )
-                val secondary = SingleCameraConfig(
-                    front.selector(), group,
-                    CompositionSettings.Builder().setAlpha(1f).setOffset(0.62f, 0.55f).setScale(0.33f, 0.33f).build(),
-                    this,
-                )
-                provider.bindToLifecycle(listOf(primary, secondary))
-                return true
-            } catch (e: Exception) {
-                Log.w(TAG, "Concurrent cameras failed, falling back to rear camera only", e)
-                provider.unbindAll()
-            }
-        }
-
-        val selector = if (provider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)) {
-            CameraSelector.DEFAULT_BACK_CAMERA
-        } else {
-            CameraSelector.DEFAULT_FRONT_CAMERA
-        }
-        provider.bindToLifecycle(this, selector, group)
-        return false
+        val label = if (tag == TAG_FRONT) "WitnessCam  FRONT" else "WitnessCam  REAR"
+        val overlay = TimestampOverlay(overlayHandler, location) { label }
+        return CameraOutput(tag, VideoCapture.withOutput(recorder), overlay, withAudio)
     }
 
-    private fun CameraInfo.selector(): CameraSelector = cameraSelector
+    private fun newPreview(): Preview = Preview.Builder()
+        .setResolutionSelector(
+            ResolutionSelector.Builder()
+                .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
+                .build()
+        )
+        .build()
+
+    private fun CameraOutput.group(preview: Preview): UseCaseGroup = UseCaseGroup.Builder()
+        .addUseCase(preview)
+        .addUseCase(capture)
+        .addEffect(overlay.effect)
+        .build()
+
     private fun CameraInfo.isBack() = CameraSelector.DEFAULT_BACK_CAMERA.filter(listOf(this)).isNotEmpty()
     private fun CameraInfo.isFront() = CameraSelector.DEFAULT_FRONT_CAMERA.filter(listOf(this)).isNotEmpty()
 
-    @SuppressLint("MissingPermission")
+    /** Starts the next numbered chunk on every camera. */
     private fun startSegment(dir: File) {
-        val capture = videoCapture ?: return
         segmentIndex++
-        val part = ChunkStore.partFile(dir, segmentIndex)
+        val index = segmentIndex
         val startedAt = System.currentTimeMillis()
+        for (output in outputs) {
+            try {
+                startOutput(dir, output, index, startedAt)
+            } catch (e: IllegalStateException) {
+                // The previous chunk is still finalizing; try this camera again shortly.
+                Log.w(TAG, "${output.tag} chunk $index not ready, retrying", e)
+                lifecycleScope.launch {
+                    delay(200)
+                    runCatching { startOutput(dir, output, index, startedAt) }
+                        .onFailure { Log.e(TAG, "${output.tag} chunk $index failed to start", it) }
+                }
+            }
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun startOutput(dir: File, output: CameraOutput, index: Int, startedAt: Long) {
+        val part = ChunkStore.partFile(dir, index, output.tag)
         ChunkStore.writeMeta(part, JSONObject().apply {
             put("startedAtMs", startedAt)
             put("startedAt", STAMP_FORMAT.format(Date(startedAt)))
+            put("camera", output.tag)
             location.last?.let { put("location", "%.6f,%.6f".format(Locale.US, it.latitude, it.longitude)) }
         })
-
-        recording = capture.output
-            .prepareRecording(this, FileOutputOptions.Builder(part).build())
-            .withAudioEnabled()
-            .start(ContextCompat.getMainExecutor(this)) { event ->
-                if (event is VideoRecordEvent.Finalize) onSegmentFinalized(part, event)
-            }
+        var pending = output.capture.output.prepareRecording(this, FileOutputOptions.Builder(part).build())
+        if (output.withAudio) pending = pending.withAudioEnabled()
+        output.recording = pending.start(ContextCompat.getMainExecutor(this)) { event ->
+            if (event is VideoRecordEvent.Finalize) onSegmentFinalized(part, event, countIt = output.withAudio)
+        }
     }
 
-    private fun onSegmentFinalized(part: File, event: VideoRecordEvent.Finalize) {
+    private fun onSegmentFinalized(part: File, event: VideoRecordEvent.Finalize, countIt: Boolean) {
         val usable = !event.hasError() || (event.error != VideoRecordEvent.Finalize.ERROR_NO_VALID_DATA &&
             event.error != VideoRecordEvent.Finalize.ERROR_INVALID_OUTPUT_OPTIONS)
         if (event.hasError()) Log.w(TAG, "Segment ${part.name} finalized with error ${event.error}", event.cause)
@@ -242,7 +279,7 @@ class RecordingService : LifecycleService() {
         if (usable && part.exists() && part.length() > 0) {
             val done = File(part.parentFile, part.name.removeSuffix(".part"))
             part.renameTo(done)
-            _status.update { it.copy(segmentsRecorded = it.segmentsRecorded + 1) }
+            if (countIt) _status.update { it.copy(segmentsRecorded = it.segmentsRecorded + 1) }
             UploadWorker.enqueue(this)
         } else {
             part.delete()
@@ -251,20 +288,18 @@ class RecordingService : LifecycleService() {
         notifyUploadProgress(this)
     }
 
+    private fun stopRecordings() {
+        outputs.forEach { it.recording?.stop(); it.recording = null }
+    }
+
     private suspend fun rotateSegments(dir: File) {
         while (lifecycleScope.isActive) {
             delay(prefs.segmentSeconds * 1000L)
             if (!_status.value.recording) break
             // Recorder queues the next recording until the previous one finishes writing, so the
             // gap between chunks is only the time it takes to finalize the file.
-            recording?.stop()
-            try {
-                startSegment(dir)
-            } catch (e: IllegalStateException) {
-                Log.w(TAG, "Next segment not ready, retrying", e)
-                delay(200)
-                runCatching { startSegment(dir) }
-            }
+            stopRecordings()
+            startSegment(dir)
         }
     }
 
@@ -312,8 +347,7 @@ class RecordingService : LifecycleService() {
         segmentJob = null
         alertsJob?.cancel()
         alertsJob = null
-        recording?.stop()
-        recording = null
+        stopRecordings()
         _status.update { it.copy(recording = false) }
         RecordWidgetProvider.updateAll(this)
         if (wasRecording && prefs.smsOnStop) SmsAlerter.sendStopAlert(this, location.last, startedAt)
@@ -323,9 +357,10 @@ class RecordingService : LifecycleService() {
         lifecycleScope.launch {
             delay(1500)
             provider?.unbindAll()
-            overlay?.close()
-            overlay = null
-            previewUseCase = null
+            outputs.forEach { it.overlay.close() }
+            outputs.clear()
+            rearPreviewUseCase = null
+            frontPreviewUseCase = null
             UploadWorker.enqueue(this@RecordingService)
             wakeLock?.takeIf { it.isHeld }?.release()
             ServiceCompat.stopForeground(this@RecordingService, ServiceCompat.STOP_FOREGROUND_REMOVE)
@@ -334,7 +369,7 @@ class RecordingService : LifecycleService() {
     }
 
     override fun onDestroy() {
-        recording?.stop()
+        stopRecordings()
         overlayThread.quitSafely()
         wakeLock?.takeIf { it.isHeld }?.release()
         _status.update { it.copy(recording = false) }
@@ -350,6 +385,9 @@ class RecordingService : LifecycleService() {
         const val ACTION_START = "com.oooshk.witnesscam.action.START"
         const val ACTION_STOP = "com.oooshk.witnesscam.action.STOP"
         private const val VIDEO_BITRATE = 3_000_000
+        private const val FRONT_VIDEO_BITRATE = 1_500_000
+        const val TAG_REAR = "rear"
+        const val TAG_FRONT = "front"
 
         private val SESSION_FORMAT = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US)
         private val STAMP_FORMAT = SimpleDateFormat("yyyy-MM-dd HH:mm:ss zzz", Locale.US)
@@ -361,13 +399,17 @@ class RecordingService : LifecycleService() {
         var currentSessionDir: File? = null
             private set
 
-        private var previewUseCase: Preview? = null
-        private var previewSurfaceProvider: Preview.SurfaceProvider? = null
+        private var rearPreviewUseCase: Preview? = null
+        private var frontPreviewUseCase: Preview? = null
+        private var rearSurfaceProvider: Preview.SurfaceProvider? = null
+        private var frontSurfaceProvider: Preview.SurfaceProvider? = null
 
-        /** Called by the activity to show (or hide, with null) the live preview. Main thread only. */
-        fun setPreviewSurface(provider: Preview.SurfaceProvider?) {
-            previewSurfaceProvider = provider
-            previewUseCase?.setSurfaceProvider(provider)
+        /** Called by the activity to show (or hide, with nulls) the live previews. Main thread only. */
+        fun setPreviewSurfaces(rear: Preview.SurfaceProvider?, front: Preview.SurfaceProvider?) {
+            rearSurfaceProvider = rear
+            frontSurfaceProvider = front
+            rearPreviewUseCase?.setSurfaceProvider(rear)
+            frontPreviewUseCase?.setSurfaceProvider(front)
         }
 
         fun start(context: Context) {

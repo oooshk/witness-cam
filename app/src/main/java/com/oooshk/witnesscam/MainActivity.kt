@@ -65,6 +65,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         binding.settingsButton.setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
+        binding.reviewButton.setOnClickListener { startActivity(Intent(this, ReviewActivity::class.java)) }
         binding.driveButton.setOnClickListener {
             if (Cloud.provider(this) == Cloud.DROPBOX) {
                 startActivity(Intent(this, DropboxConnectActivity::class.java))
@@ -105,9 +106,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        RecordingService.setPreviewSurface(binding.preview.surfaceProvider)
+        RecordingService.setPreviewSurfaces(binding.preview.surfaceProvider, binding.frontPreview.surfaceProvider)
         val locked = getSystemService(KeyguardManager::class.java).isKeyguardLocked
         binding.settingsButton.isVisible = !locked
+        binding.reviewButton.isVisible = !locked
         binding.driveButton.isVisible = !locked && !Cloud.isConnected(this)
         binding.driveButton.setText(
             if (Cloud.provider(this) == Cloud.DROPBOX) R.string.connect_dropbox else R.string.connect_drive
@@ -116,7 +118,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onStop() {
-        RecordingService.setPreviewSurface(null)
+        RecordingService.setPreviewSurfaces(null, null)
         super.onStop()
     }
 
@@ -136,6 +138,7 @@ class MainActivity : AppCompatActivity() {
         binding.recordButton.setImageResource(if (status.recording) R.drawable.ic_stop else R.drawable.ic_record)
         binding.recordButton.contentDescription = getString(if (status.recording) R.string.stop else R.string.record)
         binding.recordingDot.isVisible = status.recording
+        binding.frontPreviewFrame.isVisible = status.recording && status.dualCamera
         binding.idleHint.isVisible = !status.recording
         if (status.recording) {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)

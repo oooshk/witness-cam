@@ -28,7 +28,6 @@ class UploadWorker(context: Context, params: WorkerParameters) : CoroutineWorker
                     uploadChunk(uploader, prefs, session, chunk)
                     RecordingService.notifyUploadProgress(applicationContext)
                 }
-                ChunkStore.pruneIfDone(session)
             }
             Result.success()
         } catch (e: CloudAuthRequiredException) {

@@ -11,8 +11,14 @@ class Prefs(context: Context) {
         get() = sp.getInt("segment_seconds", 10)
         set(v) = sp.edit().putInt("segment_seconds", v.coerceIn(5, 60)).apply()
 
+    /** Also record the front camera (to separate files) when the phone supports it. */
+    var dualCamera: Boolean
+        get() = sp.getBoolean("dual_camera", true)
+        set(v) = sp.edit().putBoolean("dual_camera", v).apply()
+
+    /** Off by default so recordings can be reviewed on the phone. */
     var deleteAfterUpload: Boolean
-        get() = sp.getBoolean("delete_after_upload", true)
+        get() = sp.getBoolean("delete_after_upload", false)
         set(v) = sp.edit().putBoolean("delete_after_upload", v).apply()
 
     var wifiOnly: Boolean

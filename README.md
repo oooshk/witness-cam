@@ -7,8 +7,13 @@ If the phone is taken or broken, everything up to the last few seconds is alread
 
 ## Features
 
-- **Dual camera**: rear camera full frame, front camera picture-in-picture in one video, on phones
-  that support concurrent cameras (many Android 11+ devices). Other phones fall back to the rear camera.
+- **Dual camera**: on phones that support running two cameras at once (many Android 11+ devices), the
+  rear camera (with audio) and the front camera each record their own full-frame video. The files are
+  `seg_0001_rear.mp4` and `seg_0001_front.mp4`. Each is stamped REAR or FRONT. Other phones, or the
+  Settings switch, use the rear camera only.
+- **Recordings screen**: lists every session with its length, cameras and upload status. Play a session
+  back clip after clip, switch between the rear and front views, open it in the cloud, or delete it
+  from the phone. PIN-protected when a PIN is set.
 - **Burned-in stamp**: date, time, time zone, GPS coordinates and accuracy drawn onto the video
   itself, so the stamp can't be stripped from the file.
 - **Upload while recording**: video is cut into chunks (10 s by default, adjustable) and each chunk
@@ -116,7 +121,11 @@ same way. If you fork this repo or publish the app, generate your own keystore a
 - There is a brief gap (typically well under a second) between chunks while one file is finalized
   and the next one starts.
 - Running front and rear cameras together depends on the phone's hardware. Phones that can't do it
-  record from the rear camera only. The status bar in the app shows which mode is active.
+  record from the rear camera only. The status bar in the app shows which mode is active. Some phones
+  lower the resolution when both cameras run at once.
+- Clips stay on the phone after upload so they can be reviewed (about 35 MB per minute with both
+  cameras). Delete old sessions from the Recordings screen, or turn on "Delete clips from the phone
+  after a verified upload" in Settings.
 - If the phone is powered off or force-stopped mid-chunk, that last chunk may be lost.
 
 ## Legal note
@@ -131,6 +140,7 @@ lawful orders. Check the laws where you live and drive.
 | File | Purpose |
 |---|---|
 | `RecordingService.kt` | Foreground service: camera binding (dual/single), chunked recording |
+| `ReviewActivity.kt` / `PlayerActivity.kt` | Recordings list and clip playback (Media3) |
 | `TimestampOverlay.kt` | CameraX `OverlayEffect` that draws the time/GPS stamp onto frames |
 | `ChunkStore.kt` | On-device queue of finished chunks waiting to upload |
 | `UploadWorker.kt` | WorkManager job that uploads and verifies chunks |

@@ -37,6 +37,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         binding.segmentSeconds.setText(prefs.segmentSeconds.toString())
+        binding.dualCamera.isChecked = prefs.dualCamera
         binding.wifiOnly.isChecked = prefs.wifiOnly
         binding.deleteAfterUpload.isChecked = prefs.deleteAfterUpload
         binding.contacts.setText(prefs.emergencyContacts)
@@ -104,6 +105,7 @@ class SettingsActivity : AppCompatActivity() {
         if (newPin.isNotEmpty()) prefs.setPin(newPin)
 
         prefs.segmentSeconds = binding.segmentSeconds.text.toString().toIntOrNull() ?: 10
+        prefs.dualCamera = binding.dualCamera.isChecked
         prefs.wifiOnly = binding.wifiOnly.isChecked
         prefs.deleteAfterUpload = binding.deleteAfterUpload.isChecked
         prefs.emergencyContacts = binding.contacts.text.toString()

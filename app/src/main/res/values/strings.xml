@@ -17,6 +17,8 @@
     <string name="warn_cloud_not_connected">Cloud upload isn\'t connected. Recording only to this phone.</string>
 
     <string name="cams_dual">Front + rear</string>
+    <string name="camera_rear">REAR</string>
+    <string name="camera_front">FRONT</string>
     <string name="cams_single">Single camera</string>
     <string name="status_uploaded">All chunks uploaded</string>
     <string name="error_prefix">Error: %1$s</string>
@@ -37,7 +39,8 @@
     <string name="segment_seconds">Chunk length (seconds, 5–60)</string>
     <string name="segment_help">Shorter chunks reach the cloud sooner. At most this much footage is at risk if the phone is taken.</string>
     <string name="wifi_only">Upload on Wi-Fi only</string>
-    <string name="delete_after_upload">Delete chunks from phone after a verified upload</string>
+    <string name="delete_after_upload">Delete clips from the phone after a verified upload (saves space, but you can only review them in the cloud)</string>
+    <string name="dual_camera">Also record the front camera (to separate files) if the phone supports it</string>
     <string name="emergency_contacts">Emergency contacts (phone numbers, comma-separated)</string>
     <string name="alert_message">Text message sent when recording starts</string>
     <string name="save">Save</string>
@@ -86,4 +89,21 @@
     <string name="dropbox_key_required">Enter the app key first</string>
     <string name="dropbox_code_required">Paste the code Dropbox showed you</string>
     <string name="no_browser">No web browser found to open Dropbox</string>
+
+    <string name="recordings">Recordings</string>
+    <string name="review_empty">No recordings yet.</string>
+    <string name="review_play">Play</string>
+    <string name="review_open_cloud">Open in cloud</string>
+    <string name="review_delete">Delete</string>
+    <string name="review_delete_title">Delete from this phone?</string>
+    <string name="review_delete_uploaded">The copies already uploaded to the cloud are not affected.</string>
+    <string name="review_delete_pending">%1$d clips have NOT been uploaded yet and will be lost. Copies already in the cloud are not affected.</string>
+    <string name="review_recording_now">recording now</string>
+    <string name="review_pending">%1$d waiting to upload</string>
+    <string name="review_all_uploaded">all uploaded</string>
+    <string name="review_subtitle">%1$d min · %2$s · %3$d clips uploaded · %4$s</string>
+    <string name="review_cloud_only">Clips were removed from the phone after upload. Use Open in cloud to watch them.</string>
+    <string name="player_show_front">Front camera</string>
+    <string name="player_show_rear">Rear camera</string>
+    <string name="player_label">Clip %1$d of %2$d · %3$s · %4$s</string>
 </resources>

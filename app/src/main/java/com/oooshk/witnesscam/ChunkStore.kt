@@ -27,7 +27,8 @@ object ChunkStore {
 
     fun pendingCount(context: Context): Int = sessions(context).sumOf { readyChunks(it).size }
 
-    fun partFile(session: File, index: Int) = File(session, "seg_%04d.mp4.part".format(index))
+    fun partFile(session: File, index: Int, camera: String) =
+        File(session, "seg_%04d_%s.mp4.part".format(index, camera))
     fun metaFile(chunk: File) = File(chunk.parentFile, chunk.name.substringBefore('.') + ".json")
     fun folderIdFile(session: File) = File(session, ".drive_folder_id")
 
@@ -35,10 +36,44 @@ object ChunkStore {
     fun readMeta(chunk: File): JSONObject =
         metaFile(chunk).takeIf { it.exists() }?.let { JSONObject(it.readText()) } ?: JSONObject()
 
-    /** Removes the session directory once every chunk has been uploaded and nothing is recording. */
-    fun pruneIfDone(session: File) {
-        val left = session.listFiles { f -> f.name.endsWith(".mp4") || f.name.endsWith(".part") || f.name.endsWith(".uploaded") }
-        if (left.isNullOrEmpty() && RecordingService.currentSessionDir != session) session.deleteRecursively()
+    /** A recording session as shown on the Recordings screen. */
+    class SessionSummary(
+        val dir: File,
+        val startedAtMs: Long,
+        val endedAtMs: Long,
+        val dualCamera: Boolean,
+        val rearClips: List<File>,
+        val frontClips: List<File>,
+        val uploadedCount: Int,
+        val pendingCount: Int,
+        val isRecording: Boolean,
+    )
+
+    private val CLIP = Regex("""seg_\d+(_(rear|front))?\.mp4(\.uploaded)?""")
+
+    fun summaries(context: Context): List<SessionSummary> =
+        sessions(context).mapNotNull { summary(it) }.sortedByDescending { it.startedAtMs }
+
+    fun summary(dir: File): SessionSummary? {
+        if (!dir.isDirectory) return null
+        val info = File(dir, "session.json").takeIf { it.exists() }
+            ?.let { runCatching { JSONObject(it.readText()) }.getOrNull() }
+        val files = dir.listFiles()?.toList().orEmpty()
+        val clips = files.filter { CLIP.matches(it.name) }.sortedBy { it.name }
+        val uploaded = File(dir, "uploaded.log").takeIf { it.exists() }?.readLines()?.count { it.isNotBlank() } ?: 0
+        val started = info?.optLong("startedAtMs")?.takeIf { it > 0 } ?: dir.lastModified()
+        val ended = files.maxOfOrNull { it.lastModified() } ?: started
+        return SessionSummary(
+            dir = dir,
+            startedAtMs = started,
+            endedAtMs = maxOf(started, ended),
+            dualCamera = info?.optBoolean("dualCamera") ?: false,
+            rearClips = clips.filter { "_front" !in it.name },
+            frontClips = clips.filter { "_front" in it.name },
+            uploadedCount = uploaded,
+            pendingCount = readyChunks(dir).size,
+            isRecording = RecordingService.currentSessionDir == dir,
+        )
     }
 
     fun hashes(file: File): Pair<String, String> {
