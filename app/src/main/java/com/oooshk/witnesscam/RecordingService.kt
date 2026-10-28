@@ -63,17 +63,23 @@ class RecordingService : LifecycleService() {
 
     private lateinit var prefs: Prefs
     private lateinit var location: LocationTracker
-    private val overlayThread = HandlerThread("overlay").apply { start() }
-    private val overlayHandler by lazy { android.os.Handler(overlayThread.looper) }
 
     /** One camera being recorded to its own series of files. */
     private class CameraOutput(
         val tag: String,
         val capture: VideoCapture<Recorder>,
         val overlay: TimestampOverlay,
+        /** Each overlay needs its own thread: it keeps its own OpenGL context current there. */
+        val overlayThread: HandlerThread,
         val withAudio: Boolean,
     ) {
         var recording: Recording? = null
+
+        fun release() {
+            overlay.close()
+            // quitSafely still runs the GL cleanup that close() just queued on this thread.
+            overlayThread.quitSafely()
+        }
     }
 
     private var provider: ProcessCameraProvider? = null
@@ -183,8 +189,8 @@ class RecordingService : LifecycleService() {
             // Cleared on a normal stop; if the app dies first, the next start falls back to one camera.
             prefs.dualAttemptActive = true
             try {
-                val rear = newOutput(TAG_REAR, VIDEO_BITRATE, withAudio = true)
-                val front = newOutput(TAG_FRONT, FRONT_VIDEO_BITRATE, withAudio = false)
+                val rear = newOutput(TAG_REAR, VIDEO_BITRATE, withAudio = true).also { outputs += it }
+                val front = newOutput(TAG_FRONT, FRONT_VIDEO_BITRATE, withAudio = false).also { outputs += it }
                 val rearPreview = newPreview().also { rearPreviewUseCase = it; it.setSurfaceProvider(rearSurfaceProvider) }
                 val frontPreview = newPreview().also { frontPreviewUseCase = it; it.setSurfaceProvider(frontSurfaceProvider) }
                 // Separate use cases per camera ("non-composition" mode): each camera records its
@@ -195,14 +201,12 @@ class RecordingService : LifecycleService() {
                         SingleCameraConfig(pair.first { it.isFront() }.cameraSelector, front.group(frontPreview), this),
                     )
                 )
-                outputs += rear
-                outputs += front
                 return true
             } catch (e: Exception) {
                 Diagnostics.log(this, "Concurrent cameras failed, falling back to one camera", e)
                 prefs.dualAttemptActive = false
                 provider.unbindAll()
-                outputs.forEach { it.overlay.close() }
+                outputs.forEach { it.release() }
                 outputs.clear()
                 frontPreviewUseCase = null
             }
@@ -228,10 +232,11 @@ class RecordingService : LifecycleService() {
             .setTargetVideoEncodingBitRate(bitrate)
             .build()
         val label = if (tag == TAG_FRONT) "WitnessCam  FRONT" else "WitnessCam  REAR"
-        val overlay = TimestampOverlay(overlayHandler, location, { label }) { e ->
+        val thread = HandlerThread("overlay-$tag").apply { start() }
+        val overlay = TimestampOverlay(android.os.Handler(thread.looper), location, { label }) { e ->
             Diagnostics.log(this, "Timestamp overlay ($tag) failed", e)
         }
-        return CameraOutput(tag, VideoCapture.withOutput(recorder), overlay, withAudio)
+        return CameraOutput(tag, VideoCapture.withOutput(recorder), overlay, thread, withAudio)
     }
 
     private fun newPreview(): Preview = Preview.Builder()
@@ -374,7 +379,7 @@ class RecordingService : LifecycleService() {
         lifecycleScope.launch {
             delay(1500)
             provider?.unbindAll()
-            outputs.forEach { it.overlay.close() }
+            outputs.forEach { it.release() }
             outputs.clear()
             rearPreviewUseCase = null
             frontPreviewUseCase = null
@@ -387,7 +392,8 @@ class RecordingService : LifecycleService() {
 
     override fun onDestroy() {
         stopRecordings()
-        overlayThread.quitSafely()
+        outputs.forEach { it.release() }
+        outputs.clear()
         wakeLock?.takeIf { it.isHeld }?.release()
         _status.update { it.copy(recording = false) }
         RecordWidgetProvider.updateAll(this)
