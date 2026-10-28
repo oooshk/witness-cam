@@ -37,9 +37,10 @@ If the phone is taken or broken, everything up to the last few seconds is alread
 
 ## Install
 
-Every push builds an APK on GitHub Actions. Open the **Actions** tab, pick the latest successful
-**Build APK** run and download the `witnesscam-debug-apk` artifact. Unzip it, copy `app-debug.apk` to
-your phone and open it. You'll need to allow installing from unknown sources.
+On your phone, open **<https://github.com/oooshk/witness-cam/releases/latest>** (sign in to GitHub,
+since the repo is private) and tap **WitnessCam.apk** under *Assets*. Open the downloaded file to
+install it. Android will ask you to allow installing from your browser the first time. Every change
+pushed to `main` is built automatically and published as a new release.
 
 To build it yourself: `./gradlew assembleDebug` (needs the Android SDK, JDK 17+).
 
