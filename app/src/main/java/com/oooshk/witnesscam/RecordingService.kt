@@ -31,6 +31,7 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -71,6 +72,7 @@ class RecordingService : LifecycleService() {
     private var recording: Recording? = null
     private var segmentIndex = 0
     private var segmentJob: Job? = null
+    private var alertsJob: Job? = null
     private var wakeLock: PowerManager.WakeLock? = null
 
     override fun onCreate() {
@@ -128,7 +130,8 @@ class RecordingService : LifecycleService() {
                 )
                 startSegment(dir)
                 segmentJob = launch { rotateSegments(dir) }
-                SmsAlerter.sendStartAlert(this@RecordingService, location.last)
+                RecordWidgetProvider.updateAll(this@RecordingService)
+                alertsJob = launch { sendAlerts(dir, now) }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to start recording", e)
                 _status.value = RecorderStatus(error = e.message ?: e.toString())
@@ -261,12 +264,55 @@ class RecordingService : LifecycleService() {
         }
     }
 
+    /** Texts emergency contacts: start alert, optional live footage link, periodic location. */
+    private suspend fun sendAlerts(session: File, startedAtMs: Long) {
+        if (prefs.contactList().isEmpty()) return
+        // Give GPS a few seconds for a first fix so the start text includes a location.
+        repeat(10) { if (location.last == null && location.hasPermission()) delay(500) }
+        SmsAlerter.sendStartAlert(this, location.last)
+
+        if (prefs.shareFootageLink && prefs.driveConnected) {
+            lifecycleScope.launch(Dispatchers.IO) { shareFootageLink(session) }
+        }
+
+        val every = prefs.locationUpdateMinutes
+        if (every > 0) {
+            while (true) {
+                delay(every * 60_000L)
+                if (!_status.value.recording) break
+                SmsAlerter.sendLocationUpdate(this, location.last, startedAtMs)
+            }
+        }
+    }
+
+    private suspend fun shareFootageLink(session: File) {
+        for (attempt in 0 until 10) {
+            try {
+                val token = DriveAuth.tokenSilently(this) ?: return
+                val drive = DriveClient(token)
+                val folderId = DriveFolders.sessionFolder(this, drive, session)
+                drive.shareWithAnyoneWithLink(folderId)
+                SmsAlerter.sendFootageLink(this, DriveFolders.folderLink(folderId))
+                return
+            } catch (e: Exception) {
+                Log.w(TAG, "Sharing footage link failed (attempt ${attempt + 1})", e)
+                delay(15_000)
+            }
+        }
+    }
+
     private fun stopEverything() {
+        val wasRecording = _status.value.recording
+        val startedAt = _status.value.startedAtMs
         segmentJob?.cancel()
         segmentJob = null
+        alertsJob?.cancel()
+        alertsJob = null
         recording?.stop()
         recording = null
         _status.update { it.copy(recording = false) }
+        RecordWidgetProvider.updateAll(this)
+        if (wasRecording && prefs.smsOnStop) SmsAlerter.sendStopAlert(this, location.last, startedAt)
         currentSessionDir = null
         location.stop()
         // Give the last segment a moment to finalize before the camera is released.
@@ -288,6 +334,7 @@ class RecordingService : LifecycleService() {
         overlayThread.quitSafely()
         wakeLock?.takeIf { it.isHeld }?.release()
         _status.update { it.copy(recording = false) }
+        RecordWidgetProvider.updateAll(this)
         super.onDestroy()
     }
 

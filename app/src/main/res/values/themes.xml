@@ -9,4 +9,9 @@
         <item name="colorPrimary">@color/rec_red</item>
         <item name="colorSecondary">@color/rec_red</item>
     </style>
+
+    <style name="Theme.WitnessCam.Dialog" parent="Theme.Material3.DayNight.Dialog">
+        <item name="colorPrimary">@color/rec_red</item>
+        <item name="windowNoTitle">true</item>
+    </style>
 </resources>

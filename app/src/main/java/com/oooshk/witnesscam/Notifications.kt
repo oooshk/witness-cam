@@ -32,9 +32,9 @@ object Notifications {
 
     fun recording(context: Context, pendingUploads: Int): Notification {
         ensureChannels(context)
-        val stop = PendingIntent.getService(
-            context, 1,
-            Intent(context, RecordingService::class.java).setAction(RecordingService.ACTION_STOP),
+        // Stopping goes through the PIN screen (it stops immediately if no PIN is set).
+        val stop = PendingIntent.getActivity(
+            context, 1, PinActivity.stopIntent(context),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val text = if (pendingUploads == 0) {

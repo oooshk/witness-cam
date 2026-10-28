@@ -19,15 +19,14 @@ class RecordTileService : TileService() {
 
     @SuppressLint("StartActivityAndCollapseDeprecated")
     override fun onClick() {
-        if (RecordingService.status.value.recording) {
-            RecordingService.stop(this)
-            qsTile?.apply { state = Tile.STATE_INACTIVE; updateTile() }
-            return
+        // Stopping asks for the PIN; starting must happen from a visible activity, so both open UI.
+        val intent = if (RecordingService.status.value.recording) {
+            PinActivity.stopIntent(this)
+        } else {
+            Intent(this, MainActivity::class.java)
+                .setAction(RecordingService.ACTION_START)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
-        // Camera recording must be started from a visible activity, so open the app to start it.
-        val intent = Intent(this, MainActivity::class.java)
-            .setAction(RecordingService.ACTION_START)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startActivityAndCollapse(
                 PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)

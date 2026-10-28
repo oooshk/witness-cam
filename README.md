@@ -19,10 +19,18 @@ If the phone is taken or broken, everything up to the last few seconds is alread
   notification with a Stop button stays visible while recording).
 - **Survives no signal**: chunks queue on the phone and upload automatically when a connection
   returns. WorkManager retries with backoff.
-- **One-tap start**: home-screen widget, Quick Settings tile (works from the lock screen) or the big
-  red button.
-- **Emergency contacts**: optional text message with the time and a Google Maps link to your location
-  when recording starts.
+- **Start/stop widget**: a home-screen button that shows **● RECORD** or **■ STOP**. There's also a
+  Quick Settings tile (works from the lock screen) and the big red button in the app.
+- **PIN-protected stop**: with a PIN set, every way of stopping a recording (the app, the widget, the
+  tile, the notification) asks for it, including from the lock screen. Settings are PIN-protected too,
+  so the PIN can't simply be removed. Wrong guesses lock the screen for increasing periods (30 s, 60 s, ...).
+- **Text alerts** to your emergency contacts:
+  - when recording starts: your message, the time and a Google Maps link to your location;
+  - optional **live footage link**: the recording's Drive folder is shared by link and texted, so
+    contacts can watch clips as they upload;
+  - optional location updates every N minutes while recording;
+  - when recording stops (on by default), including how long it ran;
+  - a **Send test text** button in Settings.
 - **Least-privilege Drive access**: the app uses the `drive.file` scope, so it can only see files it
   created, not the rest of your Drive.
 
@@ -68,6 +76,14 @@ same way. If you fork this repo or publish the app, generate your own keystore a
   "phone gets taken" protection.
 
 ## Known limitations
+
+- **The PIN can't stop everything.** Android always lets the phone's owner (or anyone holding an
+  unlocked phone) force-stop an app from system Settings, the Android 13+ "active apps" panel, or by
+  powering off the phone. The PIN stops casual shutdowns. The real protection is that footage already
+  uploaded to Drive is out of reach. Keep your phone's screen lock enabled, and keep the chunk length short.
+- The live footage link makes that recording's folder viewable by **anyone who has the link**. It's off
+  by default. You can unshare a folder in Drive at any time (Share → General access → Restricted).
+- Text alerts need a SIM with SMS service and the SMS permission. Standard message rates apply.
 
 - Android only lets a camera/microphone recording start while the app is on screen, so the widget
   and tile open the app to start recording. After that you can turn the screen off.

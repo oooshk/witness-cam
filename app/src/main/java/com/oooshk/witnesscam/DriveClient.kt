@@ -48,6 +48,15 @@ class DriveClient(private val token: String) {
         execute(create).use { resp -> return JSONObject(resp.body!!.string()).getString("id") }
     }
 
+    /** Lets anyone with the link view [fileId] (used to share footage with emergency contacts). */
+    fun shareWithAnyoneWithLink(fileId: String) {
+        val body = JSONObject().put("role", "reader").put("type", "anyone")
+        val req = Request.Builder()
+            .url("https://www.googleapis.com/drive/v3/files/$fileId/permissions?fields=id")
+            .post(body.toString().toRequestBody(json))
+        execute(req).close()
+    }
+
     /** Uploads [file] with a resumable session, returning Drive's id and server-side checksums. */
     fun upload(
         file: File,

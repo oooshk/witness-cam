@@ -12,27 +12,48 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** Texts the user's emergency contacts when a recording starts. */
+/** Texts the user's emergency contacts about a recording. */
 object SmsAlerter {
     private const val TAG = "SmsAlerter"
 
     fun sendStartAlert(context: Context, location: Location?) {
-        val prefs = Prefs(context)
-        val contacts = prefs.contactList()
-        if (contacts.isEmpty()) return
+        send(context, buildString {
+            append(Prefs(context).alertMessage)
+            append("\nStarted: ").append(now())
+            appendLocation(location)
+        })
+    }
+
+    fun sendFootageLink(context: Context, link: String) {
+        send(context, "WitnessCam: footage is uploading live here (refresh for new clips):\n$link")
+    }
+
+    fun sendLocationUpdate(context: Context, location: Location?, startedAtMs: Long) {
+        val minutes = (System.currentTimeMillis() - startedAtMs) / 60_000
+        send(context, buildString {
+            append("WitnessCam: still recording ($minutes min). ").append(now())
+            appendLocation(location)
+        })
+    }
+
+    fun sendStopAlert(context: Context, location: Location?, startedAtMs: Long) {
+        val minutes = (System.currentTimeMillis() - startedAtMs + 30_000) / 60_000
+        send(context, buildString {
+            append("WitnessCam: recording stopped after $minutes min. ").append(now())
+            appendLocation(location)
+        })
+    }
+
+    fun sendTest(context: Context): Boolean = send(context, "WitnessCam test: this is a test alert. No action needed.")
+
+    /** Returns false if there are no contacts or SMS permission is missing. */
+    private fun send(context: Context, text: String): Boolean {
+        val contacts = Prefs(context).contactList()
+        if (contacts.isEmpty()) return false
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
             Log.w(TAG, "SEND_SMS not granted; skipping alert")
-            return
+            return false
         }
-
-        val text = buildString {
-            append(prefs.alertMessage)
-            append("\nTime: ").append(SimpleDateFormat("yyyy-MM-dd HH:mm:ss zzz", Locale.US).format(Date()))
-            if (location != null) {
-                append("\nLocation: https://maps.google.com/?q=%.6f,%.6f".format(Locale.US, location.latitude, location.longitude))
-            }
-        }
-
         val sms = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             context.getSystemService(SmsManager::class.java)
         } else {
@@ -46,6 +67,17 @@ object SmsAlerter {
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to text $number", e)
             }
+        }
+        return true
+    }
+
+    private fun now() = SimpleDateFormat("yyyy-MM-dd HH:mm:ss zzz", Locale.US).format(Date())
+
+    private fun StringBuilder.appendLocation(location: Location?) {
+        if (location != null) {
+            append("\nLocation: https://maps.google.com/?q=%.6f,%.6f".format(Locale.US, location.latitude, location.longitude))
+        } else {
+            append("\nLocation: unavailable")
         }
     }
 }

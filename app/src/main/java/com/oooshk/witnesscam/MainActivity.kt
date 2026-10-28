@@ -58,7 +58,11 @@ class MainActivity : AppCompatActivity() {
         prefs = Prefs(this)
 
         binding.recordButton.setOnClickListener {
-            if (RecordingService.status.value.recording) RecordingService.stop(this) else startRecording()
+            if (RecordingService.status.value.recording) {
+                startActivity(PinActivity.stopIntent(this))
+            } else {
+                startRecording()
+            }
         }
         binding.settingsButton.setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
         binding.driveButton.setOnClickListener { connectDrive() }

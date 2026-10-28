@@ -39,6 +39,59 @@ class Prefs(context: Context) {
         get() = sp.getString("drive_root_folder", null)
         set(v) = sp.edit().putString("drive_root_folder", v).apply()
 
+    /** Text contacts again when recording stops. */
+    var smsOnStop: Boolean
+        get() = sp.getBoolean("sms_on_stop", true)
+        set(v) = sp.edit().putBoolean("sms_on_stop", v).apply()
+
+    /** While recording, text an updated location every N minutes (0 = off). */
+    var locationUpdateMinutes: Int
+        get() = sp.getInt("location_update_minutes", 0)
+        set(v) = sp.edit().putInt("location_update_minutes", v.coerceIn(0, 120)).apply()
+
+    /** Make the session's Drive folder viewable by link and text that link to contacts. */
+    var shareFootageLink: Boolean
+        get() = sp.getBoolean("share_footage_link", false)
+        set(v) = sp.edit().putBoolean("share_footage_link", v).apply()
+
+    val hasPin: Boolean get() = sp.contains("pin_hash")
+
+    /** Stores a salted PBKDF2 hash of [pin]; a blank pin removes protection. */
+    fun setPin(pin: String) {
+        if (pin.isBlank()) {
+            sp.edit().remove("pin_hash").remove("pin_salt").apply()
+            return
+        }
+        val salt = ByteArray(16).also { java.security.SecureRandom().nextBytes(it) }
+        sp.edit()
+            .putString("pin_salt", salt.b64())
+            .putString("pin_hash", hashPin(pin, salt).b64())
+            .apply()
+    }
+
+    fun checkPin(pin: String): Boolean {
+        val salt = sp.getString("pin_salt", null)?.unb64() ?: return true
+        val expected = sp.getString("pin_hash", null)?.unb64() ?: return true
+        return java.security.MessageDigest.isEqual(hashPin(pin, salt), expected)
+    }
+
+    /** Wrong-PIN lockout state, persisted so restarting the app doesn't reset it. */
+    var pinFailures: Int
+        get() = sp.getInt("pin_failures", 0)
+        set(v) = sp.edit().putInt("pin_failures", v).apply()
+
+    var pinLockedUntilMs: Long
+        get() = sp.getLong("pin_locked_until", 0)
+        set(v) = sp.edit().putLong("pin_locked_until", v).apply()
+
+    private fun hashPin(pin: String, salt: ByteArray): ByteArray {
+        val spec = javax.crypto.spec.PBEKeySpec(pin.toCharArray(), salt, 20_000, 256)
+        return javax.crypto.SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded
+    }
+
+    private fun ByteArray.b64() = android.util.Base64.encodeToString(this, android.util.Base64.NO_WRAP)
+    private fun String.unb64() = android.util.Base64.decode(this, android.util.Base64.NO_WRAP)
+
     fun contactList(): List<String> =
         emergencyContacts.split(',', ';', '\n').map { it.trim() }.filter { it.isNotEmpty() }
 }

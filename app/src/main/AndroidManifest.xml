@@ -40,6 +40,13 @@
         </activity>
 
         <activity
+            android:name=".PinActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:taskAffinity=""
+            android:theme="@style/Theme.WitnessCam.Dialog" />
+
+        <activity
             android:name=".SettingsActivity"
             android:exported="false"
             android:label="@string/settings" />

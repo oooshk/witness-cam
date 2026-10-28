@@ -44,18 +44,15 @@ class UploadWorker(context: Context, params: WorkerParameters) : CoroutineWorker
             }
             Result.success()
         } catch (e: IOException) {
+            // A 404 usually means the user deleted our Drive folder; forget cached ids so it's recreated.
+            if (e.message?.startsWith("Drive HTTP 404") == true) DriveFolders.forgetCachedIds(applicationContext)
             Log.w(TAG, "Upload failed, will retry", e)
             Result.retry()
         }
     }
 
     private fun uploadChunk(drive: DriveClient, prefs: Prefs, session: File, chunk: File) {
-        val rootId = prefs.driveRootFolderId ?: drive.ensureFolder(ROOT_FOLDER, null).also {
-            prefs.driveRootFolderId = it
-        }
-        val idFile = ChunkStore.folderIdFile(session)
-        val folderId = idFile.takeIf { it.exists() }?.readText()?.trim()
-            ?: drive.ensureFolder(session.name, rootId).also { idFile.writeText(it) }
+        val folderId = DriveFolders.sessionFolder(applicationContext, drive, session)
 
         val (sha256, md5) = ChunkStore.hashes(chunk)
         val meta = ChunkStore.readMeta(chunk)
