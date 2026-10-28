@@ -78,8 +78,9 @@ class TimestampOverlay(
             add(label())
         }
 
-        textPaint.textSize = minOf(w, h) / 22f
-        val pad = textPaint.textSize * 0.4f
+        // About 1/40 of the short side per line: readable without covering much of the picture.
+        textPaint.textSize = minOf(w, h) / 40f
+        val pad = textPaint.textSize * 0.3f
         val lineHeight = textPaint.fontSpacing
         val textWidth = lines.maxOf { textPaint.measureText(it) }
         val top = h - pad * 3 - lineHeight * lines.size
