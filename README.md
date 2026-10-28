@@ -25,7 +25,9 @@ If the phone is taken or broken, everything up to the last few seconds is alread
   notification with a Stop button stays visible while recording).
 - **Survives no signal**: chunks queue on the phone and upload automatically when a connection
   returns. WorkManager retries with backoff.
-- **Start/stop widget**: a home-screen button that shows **● RECORD** or **■ STOP**. There's also a
+- **Start/stop widget**: a home-screen button that shows **● RECORD** or **■ STOP**. To prevent
+  accidental presses it needs two taps: the first turns it amber ("TAP AGAIN") for 3 seconds and the
+  second acts. This can be turned off in Settings. There's also a
   Quick Settings tile (works from the lock screen) and the big red button in the app.
 - **PIN-protected stop**: with a PIN set, every way of stopping a recording (the app, the widget, the
   tile, the notification) asks for it, including from the lock screen. Settings are PIN-protected too,

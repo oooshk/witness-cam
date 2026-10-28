@@ -16,6 +16,16 @@ class Prefs(context: Context) {
         get() = sp.getBoolean("dual_camera", true)
         set(v) = sp.edit().putBoolean("dual_camera", v).apply()
 
+    /** The home-screen widget needs a confirming second tap. */
+    var widgetDoubleTap: Boolean
+        get() = sp.getBoolean("widget_double_tap", true)
+        set(v) = sp.edit().putBoolean("widget_double_tap", v).apply()
+
+    /** While in the future, the widget is armed and the next tap acts. */
+    var widgetArmedUntilMs: Long
+        get() = sp.getLong("widget_armed_until", 0)
+        set(v) = sp.edit().putLong("widget_armed_until", v).apply()
+
     /** Off by default so recordings can be reviewed on the phone. */
     var deleteAfterUpload: Boolean
         get() = sp.getBoolean("delete_after_upload", false)

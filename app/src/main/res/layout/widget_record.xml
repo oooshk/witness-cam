@@ -10,6 +10,11 @@
         android:gravity="center"
         android:text="@string/widget_text"
         android:textColor="#FFFFFFFF"
+        android:autoSizeMaxTextSize="20sp"
+        android:autoSizeMinTextSize="10sp"
+        android:autoSizeTextType="uniform"
+        android:maxLines="2"
+        android:padding="6dp"
         android:textSize="20sp"
         android:textStyle="bold" />
 </FrameLayout>

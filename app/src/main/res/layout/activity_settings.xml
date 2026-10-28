@@ -68,6 +68,12 @@
             android:text="@string/dual_camera" />
 
         <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/widget_double_tap"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_double_tap" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
             android:id="@+id/wifi_only"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

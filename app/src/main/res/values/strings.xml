@@ -8,6 +8,9 @@
     <string name="widget_label">WitnessCam record</string>
     <string name="widget_text">● RECORD</string>
     <string name="widget_stop">■ STOP</string>
+    <string name="widget_armed_record">TAP AGAIN\nTO RECORD</string>
+    <string name="widget_armed_stop">TAP AGAIN\nTO STOP</string>
+    <string name="widget_double_tap">Widget needs two taps to start or stop (prevents accidental presses)</string>
     <string name="idle_hint">Tap the red button to start recording. Video is stamped with the date, time and location, and uploaded to your Google Drive every few seconds.</string>
 
     <string name="connect_drive">Connect Google Drive</string>

@@ -26,6 +26,10 @@ class PinActivity : AppCompatActivity() {
         setShowWhenLocked(true)
         prefs = Prefs(this)
 
+        if (savedInstanceState == null && mode == MODE_STOP && !RecordWidgetProvider.consumeArmedTap(this, intent)) {
+            finish()
+            return
+        }
         if (!prefs.hasPin) {
             succeed()
             return

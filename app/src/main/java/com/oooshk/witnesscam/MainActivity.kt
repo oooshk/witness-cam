@@ -100,7 +100,8 @@ class MainActivity : AppCompatActivity() {
     private fun handleIntent(intent: Intent?) {
         if (intent?.action == RecordingService.ACTION_START) {
             intent.action = null
-            startRecording()
+            // A tap on a widget that was armed too long ago just opens the app.
+            if (RecordWidgetProvider.consumeArmedTap(this, intent)) startRecording()
         }
     }
 
