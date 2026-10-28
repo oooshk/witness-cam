@@ -1,17 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Neutral blue-grey accents. Red (rec_red) is used only for the record button and widget. -->
     <style name="Theme.WitnessCam" parent="Theme.Material3.DayNight">
-        <item name="colorPrimary">@color/rec_red</item>
-        <item name="colorSecondary">@color/rec_red</item>
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorOnPrimary">@color/on_accent</item>
+        <item name="colorPrimaryContainer">@color/accent_container</item>
+        <item name="colorOnPrimaryContainer">@color/on_accent_container</item>
+        <item name="colorSecondary">@color/accent</item>
+        <item name="colorSecondaryContainer">@color/accent_container</item>
+        <item name="colorOnSecondaryContainer">@color/on_accent_container</item>
     </style>
 
     <style name="Theme.WitnessCam.Fullscreen" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/rec_red</item>
-        <item name="colorSecondary">@color/rec_red</item>
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorOnPrimary">@color/on_accent</item>
+        <item name="colorPrimaryContainer">@color/accent_container</item>
+        <item name="colorOnPrimaryContainer">@color/on_accent_container</item>
+        <item name="colorSecondary">@color/accent</item>
     </style>
 
     <style name="Theme.WitnessCam.Dialog" parent="Theme.Material3.DayNight.Dialog">
-        <item name="colorPrimary">@color/rec_red</item>
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorOnPrimary">@color/on_accent</item>
         <item name="windowNoTitle">true</item>
     </style>
 </resources>

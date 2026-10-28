@@ -145,4 +145,19 @@
     <string name="battery_exempt">✓ Battery optimisation is off for WitnessCam, so uploads can run in the background.</string>
     <string name="battery_not_exempt">Battery optimisation may pause uploads when the app isn\'t open. Tap the button above and choose Allow.</string>
     <string name="battery_honor">On Honor/Huawei phones also open Android Settings → Battery → App launch (or Apps → WitnessCam → Battery) → turn off \"Manage automatically\" and turn on Auto-launch, Secondary launch and Run in background.</string>
+
+    <string name="section_cloud">Cloud upload</string>
+    <string name="section_cloud_summary">Where recordings go and how they get there.</string>
+    <string name="background_heading">Background uploads</string>
+    <string name="section_recording">Recording</string>
+    <string name="section_recording_summary">Cameras and clip length.</string>
+    <string name="section_protection_summary">Stop someone else switching a recording off.</string>
+    <string name="section_alerts_summary">Who gets a text, and when.</string>
+    <string name="alerts_when">When to text</string>
+    <string name="section_help">Help</string>
+    <string name="section_help_summary">Storage and troubleshooting.</string>
+    <string name="pin_new_short">New PIN (4+ digits)</string>
+    <string name="pin_new_help">Needed to stop a recording and to open Settings and Recordings. Leave blank to keep the current PIN.</string>
+    <string name="location_update_short">Location updates every N minutes</string>
+    <string name="location_update_help">While recording. 0 = off.</string>
 </resources>
