@@ -128,4 +128,11 @@
     <string name="share_details">Share details</string>
     <string name="share_diagnostics">Share diagnostics</string>
     <string name="close">Close</string>
+
+    <string name="biometric_switch">Allow fingerprint or face instead of the PIN</string>
+    <string name="biometric_note">Convenient, but someone can hold the phone to your face or press your finger to it without your cooperation; nobody can do that with a PIN only you know. The PIN always works as a fallback.</string>
+    <string name="biometric_needs_pin">Set a PIN first. It stays as the fallback.</string>
+    <string name="biometric_unavailable">No fingerprint or face is set up on this phone (Android Settings → Security).</string>
+    <string name="biometric_use_pin">Use PIN</string>
+    <string name="biometric_button">Fingerprint / face</string>
 </resources>

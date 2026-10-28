@@ -43,6 +43,18 @@ class PinActivity : AppCompatActivity() {
         binding.pin.setOnEditorActionListener { _, action, _ ->
             if (action == EditorInfo.IME_ACTION_DONE) { submit(); true } else false
         }
+
+        val biometric = BiometricUnlock.enabled(this)
+        binding.useBiometric.isVisible = biometric
+        binding.useBiometric.setOnClickListener { promptBiometric() }
+        if (biometric && savedInstanceState == null) promptBiometric()
+    }
+
+    private fun promptBiometric() {
+        BiometricUnlock.prompt(this, binding.title.text) {
+            prefs.pinFailures = 0
+            succeed()
+        }
     }
 
     private fun submit() {

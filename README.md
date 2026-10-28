@@ -32,6 +32,8 @@ If the phone is taken or broken, everything up to the last few seconds is alread
 - **PIN-protected stop**: with a PIN set, every way of stopping a recording (the app, the widget, the
   tile, the notification) asks for it, including from the lock screen. Settings are PIN-protected too,
   so the PIN can't simply be removed. Wrong guesses lock the screen for increasing periods (30 s, 60 s, ...).
+  Optionally, fingerprint or face can be used instead of typing the PIN (off by default: a PIN can't
+  be taken from you the way a finger or face can).
 - **Text alerts** to emergency contacts chosen from your phone's contacts (or typed in):
   - when recording starts: your message, the time and a Google Maps link to your location;
   - optional **live footage link**: the recording's Drive folder is shared by link and texted, so

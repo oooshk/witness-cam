@@ -91,6 +91,9 @@ class SettingsActivity : AppCompatActivity() {
             prefs.setPin("")
             renderPinStatus()
         }
+        binding.biometricUnlock.setOnCheckedChangeListener { _, checked ->
+            if (binding.biometricUnlock.isEnabled) prefs.biometricUnlock = checked
+        }
         binding.sendTest.setOnClickListener {
             if (!hasSmsPermission()) {
                 smsPermission.launch(Manifest.permission.SEND_SMS)
@@ -125,6 +128,17 @@ class SettingsActivity : AppCompatActivity() {
     private fun renderPinStatus() {
         binding.pinStatus.setText(if (prefs.hasPin) R.string.pin_status_set else R.string.pin_status_none)
         binding.removePin.isVisible = prefs.hasPin
+
+        val available = BiometricUnlock.available(this)
+        binding.biometricUnlock.isEnabled = prefs.hasPin && available
+        binding.biometricUnlock.isChecked = prefs.biometricUnlock && prefs.hasPin && available
+        binding.biometricNote.setText(
+            when {
+                !available -> R.string.biometric_unavailable
+                !prefs.hasPin -> R.string.biometric_needs_pin
+                else -> R.string.biometric_note
+            }
+        )
     }
 
     private fun save() {

@@ -126,6 +126,11 @@ class Prefs(context: Context) {
 
     val hasPin: Boolean get() = sp.contains("pin_hash")
 
+    /** Accept fingerprint/face instead of typing the PIN. */
+    var biometricUnlock: Boolean
+        get() = sp.getBoolean("biometric_unlock", false)
+        set(v) = sp.edit().putBoolean("biometric_unlock", v).apply()
+
     /** Stores a salted PBKDF2 hash of [pin]; a blank pin removes protection. */
     fun setPin(pin: String) {
         if (pin.isBlank()) {
