@@ -30,6 +30,7 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -81,6 +82,17 @@ class RecordingService : LifecycleService() {
     private var segmentJob: Job? = null
     private var alertsJob: Job? = null
     private var starting = false
+
+    /** Turns unexpected recording errors into a clean stop instead of an app crash. */
+    private val errorHandler = CoroutineExceptionHandler { _, e -> failRecording("Recording error", e) }
+
+    /** Logs [e], switches off dual-camera if that was running, and stops cleanly. */
+    private fun failRecording(what: String, e: Throwable) {
+        Diagnostics.log(this, what, e)
+        if (prefs.dualAttemptActive) Diagnostics.disableDualAfterFailure(this)
+        _status.update { it.copy(error = e.message ?: e.toString()) }
+        stopEverything()
+    }
     private var wakeLock: PowerManager.WakeLock? = null
 
     override fun onCreate() {
@@ -124,8 +136,9 @@ class RecordingService : LifecycleService() {
             .apply { acquire(6 * 60 * 60 * 1000L) }
         location.start()
 
+        Diagnostics.checkUnfinishedDualAttempt(this)
         starting = true
-        lifecycleScope.launch {
+        lifecycleScope.launch(errorHandler) {
             try {
                 val dual = bindCameras()
                 val now = System.currentTimeMillis()
@@ -142,9 +155,7 @@ class RecordingService : LifecycleService() {
                 RecordWidgetProvider.updateAll(this@RecordingService)
                 alertsJob = launch { sendAlerts(dir, now) }
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to start recording", e)
-                _status.value = RecorderStatus(error = e.message ?: e.toString())
-                stopEverything()
+                failRecording("Failed to start recording", e)
             } finally {
                 starting = false
             }
@@ -169,6 +180,8 @@ class RecordingService : LifecycleService() {
             null
         }
         if (pair != null) {
+            // Cleared on a normal stop; if the app dies first, the next start falls back to one camera.
+            prefs.dualAttemptActive = true
             try {
                 val rear = newOutput(TAG_REAR, VIDEO_BITRATE, withAudio = true)
                 val front = newOutput(TAG_FRONT, FRONT_VIDEO_BITRATE, withAudio = false)
@@ -186,7 +199,8 @@ class RecordingService : LifecycleService() {
                 outputs += front
                 return true
             } catch (e: Exception) {
-                Log.w(TAG, "Concurrent cameras failed, falling back to one camera", e)
+                Diagnostics.log(this, "Concurrent cameras failed, falling back to one camera", e)
+                prefs.dualAttemptActive = false
                 provider.unbindAll()
                 outputs.forEach { it.overlay.close() }
                 outputs.clear()
@@ -214,7 +228,9 @@ class RecordingService : LifecycleService() {
             .setTargetVideoEncodingBitRate(bitrate)
             .build()
         val label = if (tag == TAG_FRONT) "WitnessCam  FRONT" else "WitnessCam  REAR"
-        val overlay = TimestampOverlay(overlayHandler, location) { label }
+        val overlay = TimestampOverlay(overlayHandler, location, { label }) { e ->
+            Diagnostics.log(this, "Timestamp overlay ($tag) failed", e)
+        }
         return CameraOutput(tag, VideoCapture.withOutput(recorder), overlay, withAudio)
     }
 
@@ -246,7 +262,7 @@ class RecordingService : LifecycleService() {
             } catch (e: IllegalStateException) {
                 // The previous chunk is still finalizing; try this camera again shortly.
                 Log.w(TAG, "${output.tag} chunk $index not ready, retrying", e)
-                lifecycleScope.launch {
+                lifecycleScope.launch(errorHandler) {
                     delay(200)
                     runCatching { startOutput(dir, output, index, startedAt) }
                         .onFailure { Log.e(TAG, "${output.tag} chunk $index failed to start", it) }
@@ -274,7 +290,7 @@ class RecordingService : LifecycleService() {
     private fun onSegmentFinalized(part: File, event: VideoRecordEvent.Finalize, countIt: Boolean) {
         val usable = !event.hasError() || (event.error != VideoRecordEvent.Finalize.ERROR_NO_VALID_DATA &&
             event.error != VideoRecordEvent.Finalize.ERROR_INVALID_OUTPUT_OPTIONS)
-        if (event.hasError()) Log.w(TAG, "Segment ${part.name} finalized with error ${event.error}", event.cause)
+        if (event.hasError()) Diagnostics.log(this, "Chunk ${part.name} finalized with error ${event.error}", event.cause)
 
         if (usable && part.exists() && part.length() > 0) {
             val done = File(part.parentFile, part.name.removeSuffix(".part"))
@@ -348,6 +364,7 @@ class RecordingService : LifecycleService() {
         alertsJob?.cancel()
         alertsJob = null
         stopRecordings()
+        prefs.dualAttemptActive = false
         _status.update { it.copy(recording = false) }
         RecordWidgetProvider.updateAll(this)
         if (wasRecording && prefs.smsOnStop) SmsAlerter.sendStopAlert(this, location.last, startedAt)

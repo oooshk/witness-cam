@@ -38,6 +38,7 @@ class SettingsActivity : AppCompatActivity() {
 
         binding.segmentSeconds.setText(prefs.segmentSeconds.toString())
         binding.dualCamera.isChecked = prefs.dualCamera
+        if (prefs.dualCamera) prefs.dualDisabledAfterCrash = false
         binding.widgetDoubleTap.isChecked = prefs.widgetDoubleTap
         binding.wifiOnly.isChecked = prefs.wifiOnly
         binding.deleteAfterUpload.isChecked = prefs.deleteAfterUpload
@@ -72,6 +73,7 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
         binding.save.setOnClickListener { save() }
+        binding.shareDiagnostics.setOnClickListener { shareDiagnostics(this) }
     }
 
     override fun onResume() {

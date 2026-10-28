@@ -22,6 +22,15 @@ import com.oooshk.witnesscam.databinding.ActivityMainBinding
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/** Opens the share sheet with the diagnostics report (for emailing/texting it to whoever helps). */
+fun shareDiagnostics(activity: android.app.Activity) {
+    val send = Intent(Intent.ACTION_SEND)
+        .setType("text/plain")
+        .putExtra(Intent.EXTRA_SUBJECT, "WitnessCam diagnostics")
+        .putExtra(Intent.EXTRA_TEXT, Diagnostics.report(activity))
+    activity.startActivity(Intent.createChooser(send, activity.getString(R.string.share_details)))
+}
+
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
@@ -116,6 +125,32 @@ class MainActivity : AppCompatActivity() {
             if (Cloud.provider(this) == Cloud.DROPBOX) R.string.connect_dropbox else R.string.connect_drive
         )
         RecordingService.notifyUploadProgress(this)
+        showCrashNoticeIfAny()
+    }
+
+    /** After a crash (or an automatic switch to one camera), explain and offer to share details. */
+    private fun showCrashNoticeIfAny() {
+        val crashed = Diagnostics.crashFile(this).exists()
+        val dualOff = prefs.dualDisabledAfterCrash
+        if (!crashed && !dualOff) return
+        val message = buildString {
+            append(getString(R.string.crash_message))
+            if (dualOff) append("\n\n").append(getString(R.string.crash_dual_off))
+        }
+        fun dismiss() {
+            Diagnostics.crashFile(this).delete()
+            prefs.dualDisabledAfterCrash = false
+        }
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.crash_title)
+            .setMessage(message)
+            .setCancelable(false)
+            .setPositiveButton(R.string.share_details) { _, _ ->
+                shareDiagnostics(this)
+                dismiss()
+            }
+            .setNegativeButton(R.string.close) { _, _ -> dismiss() }
+            .show()
     }
 
     override fun onStop() {

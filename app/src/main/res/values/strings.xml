@@ -109,4 +109,11 @@
     <string name="player_show_front">Front camera</string>
     <string name="player_show_rear">Rear camera</string>
     <string name="player_label">Clip %1$d of %2$d · %3$s · %4$s</string>
+
+    <string name="crash_title">WitnessCam stopped unexpectedly</string>
+    <string name="crash_message">Something went wrong during the last recording. Tap Share details to send the error report to whoever is helping you fix it.</string>
+    <string name="crash_dual_off">Recording both cameras at once failed on this phone, so WitnessCam has switched to the rear camera only. You can turn the front camera back on in Settings.</string>
+    <string name="share_details">Share details</string>
+    <string name="share_diagnostics">Share diagnostics</string>
+    <string name="close">Close</string>
 </resources>

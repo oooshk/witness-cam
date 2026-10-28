@@ -11,8 +11,10 @@ android {
         applicationId = "com.oooshk.witnesscam"
         minSdk = 29
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        // CI sets GITHUB_RUN_NUMBER, so the version matches the "build N" release name.
+        val build = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
+        versionCode = build
+        versionName = "build $build"
     }
 
     signingConfigs {

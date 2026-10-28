@@ -14,7 +14,7 @@ class Prefs(context: Context) {
     /** Also record the front camera (to separate files) when the phone supports it. */
     var dualCamera: Boolean
         get() = sp.getBoolean("dual_camera", true)
-        set(v) = sp.edit().putBoolean("dual_camera", v).apply()
+        set(v) = sp.edit().putBoolean("dual_camera", v).commit().let { }
 
     /** The home-screen widget needs a confirming second tap. */
     var widgetDoubleTap: Boolean
@@ -25,6 +25,16 @@ class Prefs(context: Context) {
     var widgetArmedUntilMs: Long
         get() = sp.getLong("widget_armed_until", 0)
         set(v) = sp.edit().putLong("widget_armed_until", v).apply()
+
+    /** Set while a dual-camera recording is starting up; still set after a crash means it failed. */
+    var dualAttemptActive: Boolean
+        get() = sp.getBoolean("dual_attempt_active", false)
+        set(v) = sp.edit().putBoolean("dual_attempt_active", v).commit().let { }
+
+    /** Dual camera was switched off automatically; tell the user once. */
+    var dualDisabledAfterCrash: Boolean
+        get() = sp.getBoolean("dual_disabled_after_crash", false)
+        set(v) = sp.edit().putBoolean("dual_disabled_after_crash", v).commit().let { }
 
     /** Off by default so recordings can be reviewed on the phone. */
     var deleteAfterUpload: Boolean

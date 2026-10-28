@@ -21,12 +21,13 @@ class TimestampOverlay(
     handler: Handler,
     private val location: LocationTracker,
     private val label: () -> String,
+    private val onError: (Throwable) -> Unit = { Log.e(TAG, "Overlay effect failed", it) },
 ) {
     val effect = OverlayEffect(
         CameraEffect.PREVIEW or CameraEffect.VIDEO_CAPTURE,
         0,
         handler,
-    ) { t -> Log.e(TAG, "Overlay effect failed", t) }
+    ) { t -> onError(t) }
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss zzz", Locale.US)
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -37,7 +38,11 @@ class TimestampOverlay(
     private val box = RectF()
 
     init {
-        effect.setOnDrawListener { frame -> draw(frame); true }
+        effect.setOnDrawListener { frame ->
+            // Never let a drawing problem take down the recording.
+            runCatching { draw(frame) }.onFailure { Log.e(TAG, "Overlay draw failed", it) }
+            true
+        }
     }
 
     private fun draw(frame: Frame) {
