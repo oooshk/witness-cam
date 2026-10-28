@@ -73,6 +73,7 @@ class RecordingService : LifecycleService() {
     private var segmentIndex = 0
     private var segmentJob: Job? = null
     private var alertsJob: Job? = null
+    private var starting = false
     private var wakeLock: PowerManager.WakeLock? = null
 
     override fun onCreate() {
@@ -92,7 +93,7 @@ class RecordingService : LifecycleService() {
     }
 
     private fun startEverything() {
-        if (_status.value.recording) return
+        if (_status.value.recording || starting) return
         if (!hasPermission(Manifest.permission.CAMERA) || !hasPermission(Manifest.permission.RECORD_AUDIO)) {
             _status.update { it.copy(error = getString(R.string.error_permissions)) }
             stopSelf()
@@ -116,6 +117,7 @@ class RecordingService : LifecycleService() {
             .apply { acquire(6 * 60 * 60 * 1000L) }
         location.start()
 
+        starting = true
         lifecycleScope.launch {
             try {
                 val dual = bindCameras()
@@ -136,6 +138,8 @@ class RecordingService : LifecycleService() {
                 Log.e(TAG, "Failed to start recording", e)
                 _status.value = RecorderStatus(error = e.message ?: e.toString())
                 stopEverything()
+            } finally {
+                starting = false
             }
         }
     }

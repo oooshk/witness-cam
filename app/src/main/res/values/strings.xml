@@ -60,7 +60,7 @@
     <string name="sms_on_stop">Text contacts when recording stops</string>
     <string name="location_update_minutes">Text location updates every N minutes while recording (0 = off)</string>
     <string name="share_footage_link">Text contacts a link to watch the footage</string>
-    <string name="share_footage_help">Anyone who gets the link can view that recording's folder in your Drive.</string>
+    <string name="share_footage_help">Anyone who gets the link can view that recording\'s folder in your Drive.</string>
     <string name="send_test">Send test text</string>
     <string name="test_sent">Test text sent</string>
     <string name="test_failed">Add a contact and allow SMS permission first</string>
