@@ -65,8 +65,8 @@ checksum before deleting the copy on the phone.
    - API: **Scoped access**
    - Access: **App folder**. The app can only touch its own folder, `Dropbox/Apps/<name>/`.
    - Name: anything unique, e.g. `WitnessCam-yourname`
-2. On the app's **Permissions** tab, tick **files.content.write**, **sharing.write** and
-   **sharing.read**, then press **Submit** at the bottom. Do this *before* connecting, because
+2. On the app's **Permissions** tab, tick **files.metadata.read**, **files.content.write**,
+   **sharing.write** and **sharing.read**, then press **Submit** at the bottom. Do this *before* connecting, because
    permissions added later need a reconnect.
 3. On the **Settings** tab, copy the **App key**. You don't need the App secret.
 4. In WitnessCam: Settings → Upload to: **Dropbox** → **Set up Dropbox**. Paste the key, tap

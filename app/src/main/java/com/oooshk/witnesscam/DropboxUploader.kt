@@ -29,11 +29,21 @@ class DropboxUploader(private val context: Context) : CloudUploader {
     override suspend fun upload(chunk: ChunkUpload): String {
         val folder = "/" + chunk.session.name
         val path = "$folder/${chunk.file.name}"
-        val meta = upload(path, chunk.file.asRequestBody(octet))
-
         // Dropbox's content_hash is its own block-wise SHA-256; recompute it locally to verify.
+        val localHash = contentHash(chunk.file)
+
+        // A retry after a partial failure may find the video already there: don't send it twice.
+        // Best effort: if the check isn't possible (e.g. permission not granted), just upload.
+        val existing = runCatching {
+            rpc("files/get_metadata", JSONObject().put("path", path), allowConflict = true)
+        }.getOrElse { JSONObject() }
+        val meta = if (existing.optString("content_hash").equals(localHash, ignoreCase = true)) {
+            existing
+        } else {
+            upload(path, chunk.file.asRequestBody(octet), mode = "add")
+        }
         val remoteHash = meta.optString("content_hash")
-        if (remoteHash.isNotEmpty() && !remoteHash.equals(contentHash(chunk.file), ignoreCase = true)) {
+        if (remoteHash.isNotEmpty() && !remoteHash.equals(localHash, ignoreCase = true)) {
             throw IOException("Checksum mismatch for ${chunk.file.name}")
         }
 
@@ -42,7 +52,7 @@ class DropboxUploader(private val context: Context) : CloudUploader {
             .put("md5", chunk.md5)
             .put("description", chunk.description)
         // Bytes, not a String: OkHttp appends "; charset=utf-8" to String bodies, which Dropbox rejects.
-        upload(path.removeSuffix(".mp4") + ".json", sidecar.toString(2).toByteArray().toRequestBody(octet))
+        upload(path.removeSuffix(".mp4") + ".json", sidecar.toString(2).toByteArray().toRequestBody(octet), mode = "overwrite")
         return meta.optString("path_display", path)
     }
 
@@ -61,10 +71,10 @@ class DropboxUploader(private val context: Context) : CloudUploader {
         throw IOException("Dropbox did not return a shared link")
     }
 
-    private fun upload(path: String, body: RequestBody): JSONObject {
+    private fun upload(path: String, body: RequestBody, mode: String): JSONObject {
         val arg = JSONObject()
             .put("path", path)
-            .put("mode", "add")
+            .put("mode", mode)
             .put("autorename", true)
             .put("mute", true)
         val req = Request.Builder()
@@ -89,6 +99,10 @@ class DropboxUploader(private val context: Context) : CloudUploader {
                 val body = resp.body?.string().orEmpty()
                 when {
                     resp.isSuccessful -> return if (body.isBlank()) JSONObject() else JSONObject(body)
+                    resp.code == 401 && "missing_scope" in body -> throw IOException(
+                        "The Dropbox app is missing a permission. In the Dropbox App Console tick it on the " +
+                            "Permissions tab, press Submit, then reconnect Dropbox in WitnessCam. Details: ${body.take(200)}"
+                    )
                     resp.code == 401 && attempt == 0 -> Unit // token expired early; refresh and retry
                     resp.code == 401 -> throw CloudAuthRequiredException("Dropbox rejected the access token")
                     resp.code == 409 && allowConflict -> return JSONObject()
