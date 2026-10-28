@@ -41,7 +41,8 @@ class DropboxUploader(private val context: Context) : CloudUploader {
             .put("file", chunk.file.name)
             .put("md5", chunk.md5)
             .put("description", chunk.description)
-        upload(path.removeSuffix(".mp4") + ".json", sidecar.toString(2).toRequestBody(octet))
+        // Bytes, not a String: OkHttp appends "; charset=utf-8" to String bodies, which Dropbox rejects.
+        upload(path.removeSuffix(".mp4") + ".json", sidecar.toString(2).toByteArray().toRequestBody(octet))
         return meta.optString("path_display", path)
     }
 
@@ -76,7 +77,7 @@ class DropboxUploader(private val context: Context) : CloudUploader {
     private fun rpc(endpoint: String, args: JSONObject, allowConflict: Boolean = false): JSONObject {
         val req = Request.Builder()
             .url("https://api.dropboxapi.com/2/$endpoint")
-            .post(args.toString().toRequestBody(json))
+            .post(args.toString().toByteArray().toRequestBody(json))
         return execute(req, allowConflict)
     }
 
