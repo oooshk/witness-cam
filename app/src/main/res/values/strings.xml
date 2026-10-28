@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WitnessCam</string>
+    <string name="settings">Settings</string>
+    <string name="record">Record</string>
+    <string name="stop">Stop</string>
+    <string name="tile_label">WitnessCam</string>
+    <string name="widget_label">WitnessCam record</string>
+    <string name="widget_text">● REC</string>
+    <string name="idle_hint">Tap the red button to start recording. Video is stamped with the date, time and location, and uploaded to your Google Drive every few seconds.</string>
+
+    <string name="connect_drive">Connect Google Drive</string>
+    <string name="drive_connected">Google Drive connected</string>
+    <string name="drive_not_connected">Google Drive not connected. Recordings stay on the phone until you connect it.</string>
+    <string name="drive_failed">Couldn\'t connect Google Drive: %1$s</string>
+    <string name="warn_drive_not_connected">Google Drive isn\'t connected. Recording only to this phone.</string>
+
+    <string name="cams_dual">Front + rear</string>
+    <string name="cams_single">Single camera</string>
+    <string name="status_uploaded">All chunks uploaded</string>
+    <string name="error_prefix">Error: %1$s</string>
+    <string name="error_permissions">Camera and microphone permissions are required to record.</string>
+    <string name="error_start_background">Recording must be started with the app open.</string>
+
+    <string name="channel_recording">Recording</string>
+    <string name="channel_alerts">Alerts</string>
+    <string name="notif_recording">WitnessCam is recording</string>
+    <string name="notif_all_uploaded">All chunks uploaded</string>
+    <plurals name="notif_pending">
+        <item quantity="one">%d chunk waiting to upload</item>
+        <item quantity="other">%d chunks waiting to upload</item>
+    </plurals>
+    <string name="notif_drive_title">Google Drive needs attention</string>
+    <string name="notif_drive_text">Open WitnessCam and reconnect Google Drive so recordings can upload.</string>
+
+    <string name="segment_seconds">Chunk length (seconds, 5–60)</string>
+    <string name="segment_help">Shorter chunks reach the cloud sooner. At most this much footage is at risk if the phone is taken.</string>
+    <string name="wifi_only">Upload on Wi-Fi only</string>
+    <string name="delete_after_upload">Delete chunks from phone after a verified upload</string>
+    <string name="emergency_contacts">Emergency contacts (phone numbers, comma-separated)</string>
+    <string name="alert_message">Text message sent when recording starts</string>
+    <string name="save">Save</string>
+    <string name="sms_denied">SMS permission denied. Emergency contacts won\'t be texted.</string>
+    <string name="storage_path">Chunks waiting to upload are stored in:\n%1$s</string>
+</resources>

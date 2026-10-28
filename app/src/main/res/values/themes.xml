@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.WitnessCam" parent="Theme.Material3.DayNight">
+        <item name="colorPrimary">@color/rec_red</item>
+        <item name="colorSecondary">@color/rec_red</item>
+    </style>
+
+    <style name="Theme.WitnessCam.Fullscreen" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/rec_red</item>
+        <item name="colorSecondary">@color/rec_red</item>
+    </style>
+</resources>
