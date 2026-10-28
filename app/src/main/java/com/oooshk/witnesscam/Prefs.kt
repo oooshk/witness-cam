@@ -34,6 +34,32 @@ class Prefs(context: Context) {
         get() = sp.getBoolean("drive_connected", false)
         set(v) = sp.edit().putBoolean("drive_connected", v).apply()
 
+    /** Which cloud uploads go to: [Cloud.GOOGLE_DRIVE] or [Cloud.DROPBOX]. */
+    var cloudProvider: String
+        get() = sp.getString("cloud_provider", Cloud.GOOGLE_DRIVE) ?: Cloud.GOOGLE_DRIVE
+        set(v) = sp.edit().putString("cloud_provider", v).apply()
+
+    var dropboxAppKey: String?
+        get() = sp.getString("dropbox_app_key", null)
+        set(v) = sp.edit().putString("dropbox_app_key", v?.trim()).apply()
+
+    var dropboxRefreshToken: String?
+        get() = sp.getString("dropbox_refresh_token", null)
+        set(v) = sp.edit().putString("dropbox_refresh_token", v).apply()
+
+    var dropboxAccessToken: String?
+        get() = sp.getString("dropbox_access_token", null)
+        set(v) = sp.edit().putString("dropbox_access_token", v).apply()
+
+    var dropboxAccessExpiryMs: Long
+        get() = sp.getLong("dropbox_access_expiry", 0)
+        set(v) = sp.edit().putLong("dropbox_access_expiry", v).apply()
+
+    /** PKCE verifier for a Dropbox sign-in that's waiting for the user to paste the code. */
+    var dropboxCodeVerifier: String?
+        get() = sp.getString("dropbox_code_verifier", null)
+        set(v) = sp.edit().putString("dropbox_code_verifier", v).apply()
+
     /** Cached id of the top-level "WitnessCam" folder in Drive. */
     var driveRootFolderId: String?
         get() = sp.getString("drive_root_folder", null)

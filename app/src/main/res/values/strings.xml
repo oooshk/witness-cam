@@ -14,7 +14,7 @@
     <string name="drive_connected">Google Drive connected</string>
     <string name="drive_not_connected">Google Drive not connected. Recordings stay on the phone until you connect it.</string>
     <string name="drive_failed">Couldn\'t connect Google Drive: %1$s</string>
-    <string name="warn_drive_not_connected">Google Drive isn\'t connected. Recording only to this phone.</string>
+    <string name="warn_cloud_not_connected">Cloud upload isn\'t connected. Recording only to this phone.</string>
 
     <string name="cams_dual">Front + rear</string>
     <string name="cams_single">Single camera</string>
@@ -31,8 +31,8 @@
         <item quantity="one">%d chunk waiting to upload</item>
         <item quantity="other">%d chunks waiting to upload</item>
     </plurals>
-    <string name="notif_drive_title">Google Drive needs attention</string>
-    <string name="notif_drive_text">Open WitnessCam and reconnect Google Drive so recordings can upload.</string>
+    <string name="notif_cloud_title">Cloud upload needs attention</string>
+    <string name="notif_cloud_text">Open WitnessCam and reconnect your cloud account so recordings can upload.</string>
 
     <string name="segment_seconds">Chunk length (seconds, 5–60)</string>
     <string name="segment_help">Shorter chunks reach the cloud sooner. At most this much footage is at risk if the phone is taken.</string>
@@ -64,4 +64,26 @@
     <string name="send_test">Send test text</string>
     <string name="test_sent">Test text sent</string>
     <string name="test_failed">Add a contact and allow SMS permission first</string>
+
+    <string name="cloud_section">Upload to</string>
+    <string name="provider_google">Google Drive</string>
+    <string name="provider_dropbox">Dropbox</string>
+    <string name="connect_dropbox">Connect Dropbox</string>
+    <string name="dropbox_setup">Set up Dropbox</string>
+    <string name="dropbox_status_connected">Dropbox connected</string>
+    <string name="dropbox_status_not_connected">Dropbox not connected. Recordings stay on the phone until you connect it.</string>
+    <string name="dropbox_disconnect">Disconnect Dropbox</string>
+    <string name="dropbox_step1">1. Paste the App key from your Dropbox app\'s Settings page (see the README for creating the app).</string>
+    <string name="dropbox_app_key">App key</string>
+    <string name="dropbox_step2">2. Open Dropbox, sign in and tap Allow. Dropbox then shows an access code.</string>
+    <string name="dropbox_open">Open Dropbox</string>
+    <string name="dropbox_step3">3. Copy that code, come back here and paste it.</string>
+    <string name="dropbox_code">Access code</string>
+    <string name="dropbox_paste">Paste</string>
+    <string name="dropbox_connect">Connect</string>
+    <string name="dropbox_connected">Dropbox connected</string>
+    <string name="dropbox_failed">Couldn\'t connect: %1$s</string>
+    <string name="dropbox_key_required">Enter the app key first</string>
+    <string name="dropbox_code_required">Paste the code Dropbox showed you</string>
+    <string name="no_browser">No web browser found to open Dropbox</string>
 </resources>

@@ -11,7 +11,7 @@ import androidx.core.app.NotificationManagerCompat
 
 object Notifications {
     const val RECORDING_ID = 1
-    private const val DRIVE_ID = 2
+    private const val CLOUD_ID = 2
     private const val CH_RECORDING = "recording"
     private const val CH_ALERTS = "alerts"
 
@@ -60,16 +60,16 @@ object Notifications {
             .notify(RECORDING_ID, recording(context, pendingUploads))
     }
 
-    fun driveNeedsAuth(context: Context) {
+    fun cloudNeedsAuth(context: Context) {
         ensureChannels(context)
         if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
         val n = NotificationCompat.Builder(context, CH_ALERTS)
             .setSmallIcon(R.drawable.ic_record)
-            .setContentTitle(context.getString(R.string.notif_drive_title))
-            .setContentText(context.getString(R.string.notif_drive_text))
+            .setContentTitle(context.getString(R.string.notif_cloud_title))
+            .setContentText(context.getString(R.string.notif_cloud_text))
             .setContentIntent(openApp(context))
             .setAutoCancel(true)
             .build()
-        context.getSystemService(NotificationManager::class.java).notify(DRIVE_ID, n)
+        context.getSystemService(NotificationManager::class.java).notify(CLOUD_ID, n)
     }
 }

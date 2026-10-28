@@ -47,6 +47,11 @@
             android:theme="@style/Theme.WitnessCam.Dialog" />
 
         <activity
+            android:name=".DropboxConnectActivity"
+            android:exported="false"
+            android:label="@string/provider_dropbox" />
+
+        <activity
             android:name=".SettingsActivity"
             android:exported="false"
             android:label="@string/settings" />

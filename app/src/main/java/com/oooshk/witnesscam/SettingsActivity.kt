@@ -44,7 +44,14 @@ class SettingsActivity : AppCompatActivity() {
         binding.smsOnStop.isChecked = prefs.smsOnStop
         binding.locationMinutes.setText(prefs.locationUpdateMinutes.toString())
         binding.shareLink.isChecked = prefs.shareFootageLink
-        binding.driveStatus.setText(if (prefs.driveConnected) R.string.drive_connected else R.string.drive_not_connected)
+        binding.providerGroup.check(if (prefs.cloudProvider == Cloud.DROPBOX) R.id.provider_dropbox else R.id.provider_google)
+        binding.providerGroup.setOnCheckedChangeListener { _, id ->
+            prefs.cloudProvider = if (id == R.id.provider_dropbox) Cloud.DROPBOX else Cloud.GOOGLE_DRIVE
+            renderCloudStatus()
+        }
+        binding.dropboxSetup.setOnClickListener {
+            startActivity(android.content.Intent(this, DropboxConnectActivity::class.java))
+        }
         binding.storagePath.text = getString(R.string.storage_path, ChunkStore.root(this).absolutePath)
         renderPinStatus()
 
@@ -63,6 +70,24 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
         binding.save.setOnClickListener { save() }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        renderCloudStatus()
+    }
+
+    private fun renderCloudStatus() {
+        val dropbox = prefs.cloudProvider == Cloud.DROPBOX
+        binding.driveStatus.setText(
+            when {
+                dropbox && Cloud.isConnected(this) -> R.string.dropbox_status_connected
+                dropbox -> R.string.dropbox_status_not_connected
+                Cloud.isConnected(this) -> R.string.drive_connected
+                else -> R.string.drive_not_connected
+            }
+        )
+        binding.dropboxSetup.isVisible = dropbox
     }
 
     private fun renderPinStatus() {

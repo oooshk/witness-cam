@@ -275,7 +275,7 @@ class RecordingService : LifecycleService() {
         repeat(10) { if (location.last == null && location.hasPermission()) delay(500) }
         SmsAlerter.sendStartAlert(this, location.last)
 
-        if (prefs.shareFootageLink && prefs.driveConnected) {
+        if (prefs.shareFootageLink && Cloud.isConnected(this)) {
             lifecycleScope.launch(Dispatchers.IO) { shareFootageLink(session) }
         }
 
@@ -292,11 +292,11 @@ class RecordingService : LifecycleService() {
     private suspend fun shareFootageLink(session: File) {
         for (attempt in 0 until 10) {
             try {
-                val token = DriveAuth.tokenSilently(this) ?: return
-                val drive = DriveClient(token)
-                val folderId = DriveFolders.sessionFolder(this, drive, session)
-                drive.shareWithAnyoneWithLink(folderId)
-                SmsAlerter.sendFootageLink(this, DriveFolders.folderLink(folderId))
+                val link = Cloud.uploader(this).shareSessionLink(session)
+                SmsAlerter.sendFootageLink(this, link)
+                return
+            } catch (e: CloudAuthRequiredException) {
+                Log.w(TAG, "Can't share footage link: cloud not connected", e)
                 return
             } catch (e: Exception) {
                 Log.w(TAG, "Sharing footage link failed (attempt ${attempt + 1})", e)

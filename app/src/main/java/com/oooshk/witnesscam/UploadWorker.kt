@@ -16,44 +16,32 @@ import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
-/** Drains the on-device chunk queue to Google Drive, oldest first, verifying each upload. */
+/** Drains the on-device chunk queue to the selected cloud, oldest first, verifying each upload. */
 class UploadWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         val prefs = Prefs(applicationContext)
-        var token = DriveAuth.tokenSilently(applicationContext)
-        if (token == null) {
-            Log.w(TAG, "Drive not authorized; chunks stay on the device")
-            Notifications.driveNeedsAuth(applicationContext)
-            return@withContext Result.failure()
-        }
-
         try {
+            val uploader = Cloud.uploader(applicationContext)
             for (session in ChunkStore.sessions(applicationContext)) {
                 for (chunk in ChunkStore.readyChunks(session)) {
-                    try {
-                        uploadChunk(DriveClient(token!!), prefs, session, chunk)
-                    } catch (e: AuthExpiredException) {
-                        DriveAuth.invalidate(applicationContext, token!!)
-                        token = DriveAuth.tokenSilently(applicationContext) ?: return@withContext Result.retry()
-                        uploadChunk(DriveClient(token!!), prefs, session, chunk)
-                    }
+                    uploadChunk(uploader, prefs, session, chunk)
                     RecordingService.notifyUploadProgress(applicationContext)
                 }
                 ChunkStore.pruneIfDone(session)
             }
             Result.success()
+        } catch (e: CloudAuthRequiredException) {
+            Log.w(TAG, "Cloud account not connected; chunks stay on the device", e)
+            Notifications.cloudNeedsAuth(applicationContext)
+            Result.failure()
         } catch (e: IOException) {
-            // A 404 usually means the user deleted our Drive folder; forget cached ids so it's recreated.
-            if (e.message?.startsWith("Drive HTTP 404") == true) DriveFolders.forgetCachedIds(applicationContext)
             Log.w(TAG, "Upload failed, will retry", e)
             Result.retry()
         }
     }
 
-    private fun uploadChunk(drive: DriveClient, prefs: Prefs, session: File, chunk: File) {
-        val folderId = DriveFolders.sessionFolder(applicationContext, drive, session)
-
+    private suspend fun uploadChunk(uploader: CloudUploader, prefs: Prefs, session: File, chunk: File) {
         val (sha256, md5) = ChunkStore.hashes(chunk)
         val meta = ChunkStore.readMeta(chunk)
         val description = buildString {
@@ -69,17 +57,10 @@ class UploadWorker(context: Context, params: WorkerParameters) : CoroutineWorker
             "startedAtMs" to meta.optLong("startedAtMs").toString(),
         )
 
-        val uploaded = drive.upload(chunk, chunk.name, folderId, "video/mp4", description, props)
-        // Make sure Drive stored exactly the bytes we recorded before deleting anything locally.
-        val verified = when {
-            uploaded.sha256 != null -> uploaded.sha256.equals(sha256, ignoreCase = true)
-            uploaded.md5 != null -> uploaded.md5.equals(md5, ignoreCase = true)
-            else -> true
-        }
-        if (!verified) throw IOException("Checksum mismatch for ${chunk.name}")
-        Log.i(TAG, "Uploaded ${session.name}/${chunk.name} -> ${uploaded.id}")
+        val remote = uploader.upload(ChunkUpload(session, chunk, sha256, md5, description, props))
+        Log.i(TAG, "Uploaded ${session.name}/${chunk.name} -> $remote")
 
-        File(session, "uploaded.log").appendText("${chunk.name}\t${uploaded.id}\t$sha256\n")
+        File(session, "uploaded.log").appendText("${chunk.name}\t$remote\t$sha256\n")
         if (prefs.deleteAfterUpload) {
             chunk.delete()
             ChunkStore.metaFile(chunk).delete()

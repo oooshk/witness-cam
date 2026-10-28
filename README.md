@@ -2,7 +2,7 @@
 
 An Android app (Android 10+) for recording police stops. It records video and audio, uses the front
 and rear cameras together when the phone supports it, burns the date, time and GPS position into
-every frame, and uploads the footage to **your own Google Drive** in short chunks while it records.
+every frame, and uploads the footage to **your own Google Drive or Dropbox** in short chunks while it records.
 If the phone is taken or broken, everything up to the last few seconds is already in the cloud.
 
 ## Features
@@ -12,7 +12,8 @@ If the phone is taken or broken, everything up to the last few seconds is alread
 - **Burned-in stamp**: date, time, time zone, GPS coordinates and accuracy drawn onto the video
   itself, so the stamp can't be stripped from the file.
 - **Upload while recording**: video is cut into chunks (10 s by default, adjustable) and each chunk
-  is uploaded to `My Drive/WitnessCam/<date_time>/` as soon as it is finished.
+  is uploaded as soon as it is finished, to `My Drive/WitnessCam/<date_time>/` or
+  `Dropbox/Apps/<your app name>/<date_time>/`.
 - **Tamper evidence**: each chunk's SHA-256 is computed on the phone, stored in the Drive file's
   description and properties, and checked against Drive's own checksum before the local copy is deleted.
 - **Background recording**: keeps recording with the screen off or another app open (a
@@ -41,6 +42,29 @@ Every push builds an APK on GitHub Actions. Open the **Actions** tab, pick the l
 your phone and open it. You'll need to allow installing from unknown sources.
 
 To build it yourself: `./gradlew assembleDebug` (needs the Android SDK, JDK 17+).
+
+## Choosing a cloud
+
+Pick **Google Drive** or **Dropbox** in Settings → Upload to. Dropbox is quicker to set up
+(about 2 minutes, no fingerprints or test users). Both verify every upload against the service's own
+checksum before deleting the copy on the phone.
+
+## One-time Dropbox setup (about 2 minutes)
+
+1. Go to <https://www.dropbox.com/developers/apps> and tap **Create app**.
+   - API: **Scoped access**
+   - Access: **App folder**. The app can only touch its own folder, `Dropbox/Apps/<name>/`.
+   - Name: anything unique, e.g. `WitnessCam-yourname`
+2. On the app's **Permissions** tab, tick **files.content.write**, **sharing.write** and
+   **sharing.read**, then press **Submit** at the bottom. Do this *before* connecting, because
+   permissions added later need a reconnect.
+3. On the **Settings** tab, copy the **App key**. You don't need the App secret.
+4. In WitnessCam: Settings → Upload to: **Dropbox** → **Set up Dropbox**. Paste the key, tap
+   **Open Dropbox**, sign in and tap **Allow**, then copy the code Dropbox shows. Go back to the app,
+   tap **Paste** and then **Connect**.
+
+Each video chunk gets a small `.json` file next to it holding its SHA-256, start time and GPS position.
+The app stays in Dropbox's "development" status, which is fine for personal use.
 
 ## One-time Google Drive setup (about 10 minutes)
 
@@ -82,7 +106,8 @@ same way. If you fork this repo or publish the app, generate your own keystore a
   powering off the phone. The PIN stops casual shutdowns. The real protection is that footage already
   uploaded to Drive is out of reach. Keep your phone's screen lock enabled, and keep the chunk length short.
 - The live footage link makes that recording's folder viewable by **anyone who has the link**. It's off
-  by default. You can unshare a folder in Drive at any time (Share → General access → Restricted).
+  by default. You can unshare a folder at any time (Drive: Share → General access → Restricted;
+  Dropbox: Share → Settings → Delete link).
 - Text alerts need a SIM with SMS service and the SMS permission. Standard message rates apply.
 
 - Android only lets a camera/microphone recording start while the app is on screen, so the widget
@@ -108,6 +133,8 @@ lawful orders. Check the laws where you live and drive.
 | `TimestampOverlay.kt` | CameraX `OverlayEffect` that draws the time/GPS stamp onto frames |
 | `ChunkStore.kt` | On-device queue of finished chunks waiting to upload |
 | `UploadWorker.kt` | WorkManager job that uploads and verifies chunks |
+| `Cloud.kt` | Cloud provider interface, provider selection, Google Drive uploader |
 | `DriveClient.kt` / `DriveAuth.kt` | Google Drive REST v3 client and Google Identity authorization |
+| `DropboxUploader.kt` / `DropboxAuth.kt` | Dropbox API v2 uploads/sharing and PKCE sign-in |
 | `SmsAlerter.kt` | Emergency-contact text message |
 | `RecordTileService.kt` / `RecordWidgetProvider.kt` | Quick Settings tile and home-screen widget |

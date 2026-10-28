@@ -65,7 +65,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
         binding.settingsButton.setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
-        binding.driveButton.setOnClickListener { connectDrive() }
+        binding.driveButton.setOnClickListener {
+            if (Cloud.provider(this) == Cloud.DROPBOX) {
+                startActivity(Intent(this, DropboxConnectActivity::class.java))
+            } else {
+                connectDrive()
+            }
+        }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -102,7 +108,10 @@ class MainActivity : AppCompatActivity() {
         RecordingService.setPreviewSurface(binding.preview.surfaceProvider)
         val locked = getSystemService(KeyguardManager::class.java).isKeyguardLocked
         binding.settingsButton.isVisible = !locked
-        binding.driveButton.isVisible = !locked && !prefs.driveConnected
+        binding.driveButton.isVisible = !locked && !Cloud.isConnected(this)
+        binding.driveButton.setText(
+            if (Cloud.provider(this) == Cloud.DROPBOX) R.string.connect_dropbox else R.string.connect_drive
+        )
         RecordingService.notifyUploadProgress(this)
     }
 
@@ -117,8 +126,8 @@ class MainActivity : AppCompatActivity() {
             requestCorePermissions()
             return
         }
-        if (!prefs.driveConnected) {
-            Toast.makeText(this, R.string.warn_drive_not_connected, Toast.LENGTH_LONG).show()
+        if (!Cloud.isConnected(this)) {
+            Toast.makeText(this, R.string.warn_cloud_not_connected, Toast.LENGTH_LONG).show()
         }
         RecordingService.start(this)
     }
