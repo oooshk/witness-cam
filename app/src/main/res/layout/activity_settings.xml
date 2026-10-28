@@ -249,6 +249,20 @@
             android:layout_height="wrap_content"
             android:textAppearance="?attr/textAppearanceBodySmall" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/battery_button"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/battery_button" />
+
+        <TextView
+            android:id="@+id/battery_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceBodySmall" />
+
         <TextView
             android:id="@+id/storage_path"
             android:layout_width="match_parent"

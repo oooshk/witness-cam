@@ -1,11 +1,14 @@
 package com.oooshk.witnesscam
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.Settings
 import android.text.InputType
@@ -104,12 +107,14 @@ class SettingsActivity : AppCompatActivity() {
         }
         binding.save.setOnClickListener { save() }
         binding.shareDiagnostics.setOnClickListener { shareDiagnostics(this) }
+        binding.batteryButton.setOnClickListener { requestBatteryExemption() }
     }
 
     override fun onResume() {
         super.onResume()
         renderCloudStatus()
         renderSmsStatus()
+        renderBatteryStatus()
     }
 
     private fun renderCloudStatus() {
@@ -215,6 +220,30 @@ class SettingsActivity : AppCompatActivity() {
         val granted = hasSmsPermission()
         binding.smsStatus.setText(if (granted) R.string.sms_status_granted else R.string.sms_status_missing)
         binding.smsAllow.isVisible = !granted
+    }
+
+    private fun isBatteryExempt() =
+        getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName)
+
+    private fun renderBatteryStatus() {
+        val exempt = isBatteryExempt()
+        binding.batteryButton.isVisible = !exempt
+        binding.batteryStatus.text = buildString {
+            append(getString(if (exempt) R.string.battery_exempt else R.string.battery_not_exempt))
+            val maker = Build.MANUFACTURER.lowercase()
+            if (maker.contains("honor") || maker.contains("huawei")) append("\n\n").append(getString(R.string.battery_honor))
+        }
+    }
+
+    @SuppressLint("BatteryLife")
+    private fun requestBatteryExemption() {
+        try {
+            startActivity(
+                Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName"))
+            )
+        } catch (e: ActivityNotFoundException) {
+            startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+        }
     }
 
     private fun showSmsHelp() {

@@ -135,4 +135,14 @@
     <string name="biometric_unavailable">No fingerprint or face is set up on this phone (Android Settings → Security).</string>
     <string name="biometric_use_pin">Use PIN</string>
     <string name="biometric_button">Fingerprint / face</string>
+
+    <string name="notif_uploading">Uploading recordings</string>
+    <string name="upload_now">Upload now</string>
+    <string name="upload_started">Uploading…</string>
+    <string name="upload_status_not_connected">%1$d clips waiting. Cloud not connected (see Settings).</string>
+    <string name="upload_status_error">%1$d clips waiting. Last attempt failed: %2$s</string>
+    <string name="battery_button">Allow background uploads</string>
+    <string name="battery_exempt">✓ Battery optimisation is off for WitnessCam, so uploads can run in the background.</string>
+    <string name="battery_not_exempt">Battery optimisation may pause uploads when the app isn\'t open. Tap the button above and choose Allow.</string>
+    <string name="battery_honor">On Honor/Huawei phones also open Android Settings → Battery → App launch (or Apps → WitnessCam → Battery) → turn off \"Manage automatically\" and turn on Auto-launch, Secondary launch and Run in background.</string>
 </resources>

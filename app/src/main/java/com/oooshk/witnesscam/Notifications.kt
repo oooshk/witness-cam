@@ -12,6 +12,7 @@ import androidx.core.app.NotificationManagerCompat
 object Notifications {
     const val RECORDING_ID = 1
     private const val CLOUD_ID = 2
+    const val UPLOAD_ID = 3
     private const val CH_RECORDING = "recording"
     private const val CH_ALERTS = "alerts"
 
@@ -51,6 +52,16 @@ object Notifications {
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .setContentIntent(openApp(context))
             .addAction(R.drawable.ic_stop, context.getString(R.string.stop), stop)
+            .build()
+    }
+
+    fun uploading(context: Context): Notification {
+        ensureChannels(context)
+        return NotificationCompat.Builder(context, CH_RECORDING)
+            .setSmallIcon(R.drawable.ic_record)
+            .setContentTitle(context.getString(R.string.notif_uploading))
+            .setOngoing(true)
+            .setContentIntent(openApp(context))
             .build()
     }
 

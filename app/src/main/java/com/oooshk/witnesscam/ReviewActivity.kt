@@ -6,10 +6,13 @@ import android.os.Bundle
 import android.text.format.DateUtils
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -35,6 +38,22 @@ class ReviewActivity : AppCompatActivity() {
         setContentView(binding.root)
         binding.list.layoutManager = LinearLayoutManager(this)
         binding.list.adapter = adapter
+        binding.uploadNow.setOnClickListener {
+            if (!Cloud.isConnected(this)) {
+                Toast.makeText(this, R.string.warn_cloud_not_connected, Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+            lifecycleScope.launch {
+                UploadWorker.uploadNow(this@ReviewActivity)
+                Toast.makeText(this@ReviewActivity, R.string.upload_started, Toast.LENGTH_SHORT).show()
+            }
+        }
+        // Keep the counts and upload status live while the screen is open.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                RecordingService.status.collect { refresh() }
+            }
+        }
 
         if (Prefs(this).hasPin && savedInstanceState == null) {
             binding.root.isVisible = false
@@ -53,6 +72,18 @@ class ReviewActivity : AppCompatActivity() {
             adapter.items = sessions
             adapter.notifyDataSetChanged()
             binding.empty.isVisible = sessions.isEmpty()
+            renderUploadStatus(sessions.sumOf { it.pendingCount })
+        }
+    }
+
+    private fun renderUploadStatus(pending: Int) {
+        val prefs = Prefs(this)
+        binding.uploadNow.isVisible = pending > 0
+        binding.uploadStatus.text = when {
+            pending == 0 -> getString(R.string.status_uploaded)
+            !Cloud.isConnected(this) -> getString(R.string.upload_status_not_connected, pending)
+            prefs.lastUploadError != null -> getString(R.string.upload_status_error, pending, prefs.lastUploadError)
+            else -> resources.getQuantityString(R.plurals.notif_pending, pending, pending)
         }
     }
 

@@ -125,6 +125,10 @@ class MainActivity : AppCompatActivity() {
             if (Cloud.provider(this) == Cloud.DROPBOX) R.string.connect_dropbox else R.string.connect_drive
         )
         RecordingService.notifyUploadProgress(this)
+        // Opening the app is a good moment to push anything still waiting.
+        if (Cloud.isConnected(this) && ChunkStore.pendingCount(this) > 0) {
+            lifecycleScope.launch { UploadWorker.uploadNow(this@MainActivity) }
+        }
         showCrashNoticeIfAny()
     }
 

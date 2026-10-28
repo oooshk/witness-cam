@@ -104,6 +104,15 @@ class Prefs(context: Context) {
         get() = sp.getString("dropbox_code_verifier", null)
         set(v) = sp.edit().putString("dropbox_code_verifier", v).apply()
 
+    /** Why the last upload attempt failed, or null if the last one succeeded. */
+    var lastUploadError: String?
+        get() = sp.getString("last_upload_error", null)
+        set(v) = sp.edit().putString("last_upload_error", v).apply()
+
+    var lastUploadAtMs: Long
+        get() = sp.getLong("last_upload_at", 0)
+        set(v) = sp.edit().putLong("last_upload_at", v).apply()
+
     /** Cached id of the top-level "WitnessCam" folder in Drive. */
     var driveRootFolderId: String?
         get() = sp.getString("drive_root_folder", null)
