@@ -45,10 +45,28 @@ class Prefs(context: Context) {
         get() = sp.getBoolean("wifi_only", false)
         set(v) = sp.edit().putBoolean("wifi_only", v).apply()
 
-    /** Comma separated phone numbers that get a text when recording starts. */
-    var emergencyContacts: String
-        get() = sp.getString("emergency_contacts", "") ?: ""
-        set(v) = sp.edit().putString("emergency_contacts", v).apply()
+    data class Contact(val name: String, val number: String)
+
+    /** People who get text alerts. Older versions stored comma-separated numbers; those are migrated. */
+    var contacts: List<Contact>
+        get() {
+            val json = sp.getString("emergency_contacts_v2", null)
+            if (json == null) {
+                return (sp.getString("emergency_contacts", "") ?: "")
+                    .split(',', ';', '\n').map { it.trim() }.filter { it.isNotEmpty() }
+                    .map { Contact("", it) }
+            }
+            val arr = org.json.JSONArray(json)
+            return (0 until arr.length()).map {
+                val o = arr.getJSONObject(it)
+                Contact(o.optString("name"), o.getString("number"))
+            }
+        }
+        set(v) {
+            val arr = org.json.JSONArray()
+            v.forEach { arr.put(org.json.JSONObject().put("name", it.name).put("number", it.number)) }
+            sp.edit().putString("emergency_contacts_v2", arr.toString()).remove("emergency_contacts").apply()
+        }
 
     var alertMessage: String
         get() = sp.getString("alert_message", null)
@@ -144,6 +162,5 @@ class Prefs(context: Context) {
     private fun ByteArray.b64() = android.util.Base64.encodeToString(this, android.util.Base64.NO_WRAP)
     private fun String.unb64() = android.util.Base64.decode(this, android.util.Base64.NO_WRAP)
 
-    fun contactList(): List<String> =
-        emergencyContacts.split(',', ';', '\n').map { it.trim() }.filter { it.isNotEmpty() }
+    fun contactList(): List<String> = contacts.map { it.number }
 }

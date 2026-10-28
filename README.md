@@ -32,7 +32,7 @@ If the phone is taken or broken, everything up to the last few seconds is alread
 - **PIN-protected stop**: with a PIN set, every way of stopping a recording (the app, the widget, the
   tile, the notification) asks for it, including from the lock screen. Settings are PIN-protected too,
   so the PIN can't simply be removed. Wrong guesses lock the screen for increasing periods (30 s, 60 s, ...).
-- **Text alerts** to your emergency contacts:
+- **Text alerts** to emergency contacts chosen from your phone's contacts (or typed in):
   - when recording starts: your message, the time and a Google Maps link to your location;
   - optional **live footage link**: the recording's Drive folder is shared by link and texted, so
     contacts can watch clips as they upload;
@@ -117,6 +117,9 @@ same way. If you fork this repo or publish the app, generate your own keystore a
   by default. You can unshare a folder at any time (Drive: Share → General access → Restricted;
   Dropbox: Share → Settings → Delete link).
 - Text alerts need a SIM with SMS service and the SMS permission. Standard message rates apply.
+  On Android 13 and newer, apps installed from a downloaded file have SMS permission blocked as a
+  "restricted setting". Settings → Text alerts → **Allow SMS** walks you through unblocking it (App
+  info → ⋮ → Allow restricted settings → Permissions → SMS → Allow).
 
 - Android only lets a camera/microphone recording start while the app is on screen, so the widget
   and tile open the app to start recording. After that you can turn the screen off.
