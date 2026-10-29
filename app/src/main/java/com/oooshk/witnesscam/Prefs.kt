@@ -80,7 +80,9 @@ class Prefs(context: Context) {
 
     /** Which cloud uploads go to: [Cloud.GOOGLE_DRIVE] or [Cloud.DROPBOX]. */
     var cloudProvider: String
-        get() = sp.getString("cloud_provider", Cloud.GOOGLE_DRIVE) ?: Cloud.GOOGLE_DRIVE
+        // Dropbox by default: it works for anyone, while Google Drive needs the maintainer's
+        // Google Cloud project to list (or publish for) each user.
+        get() = sp.getString("cloud_provider", Cloud.DROPBOX) ?: Cloud.DROPBOX
         set(v) = sp.edit().putString("cloud_provider", v).apply()
 
     var dropboxAppKey: String?

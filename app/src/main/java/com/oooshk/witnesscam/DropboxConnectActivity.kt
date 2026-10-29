@@ -24,7 +24,13 @@ class DropboxConnectActivity : AppCompatActivity() {
         setContentView(binding.root)
         prefs = Prefs(this)
 
-        binding.appKey.setText(prefs.dropboxAppKey.orEmpty())
+        // With a key built into the app, users skip creating their own Dropbox app.
+        val builtIn = BuildConfig.DROPBOX_APP_KEY
+        binding.appKey.setText(prefs.dropboxAppKey ?: builtIn)
+        if (builtIn.isNotEmpty() && (prefs.dropboxAppKey == null || prefs.dropboxAppKey == builtIn)) {
+            binding.step1.isVisible = false
+            binding.appKeyLayout.isVisible = false
+        }
         render()
 
         binding.openDropbox.setOnClickListener { openDropbox() }

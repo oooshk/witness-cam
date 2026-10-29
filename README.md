@@ -46,40 +46,49 @@ If the phone is taken or broken, everything up to the last few seconds is alread
 
 ## Install
 
-On your phone, open **<https://github.com/oooshk/witness-cam/releases/latest>** (sign in to GitHub,
-since the repo is private) and tap **WitnessCam.apk** under *Assets*. Open the downloaded file to
-install it. Android will ask you to allow installing from your browser the first time. Every change
-pushed to `main` is built automatically and published as a new release.
+1. On your Android phone, open **<https://github.com/oooshk/witness-cam/releases/latest>** and tap
+   **WitnessCam.apk** under *Assets*.
+2. Open the downloaded file and tap **Install**. The first time, Android asks you to allow installs
+   from your browser. If Play Protect warns that the app is unknown, tap **More details → Install
+   anyway**. That warning appears for any app that isn't from the Play Store.
+3. Open WitnessCam and allow camera, microphone, location and notifications.
 
-To build it yourself: `./gradlew assembleDebug` (needs the Android SDK, JDK 17+).
+**Only download WitnessCam from the GitHub releases page above.** Each release lists the APK's
+SHA-256 and the signing certificate's SHA-256, so you can check that a copy is genuine. Updates
+install over the old version only if they're signed with the same key.
 
-## Choosing a cloud
+## Set up uploads (Dropbox, about 1 minute)
 
-Pick **Google Drive** or **Dropbox** in Settings → Upload to. Dropbox is quicker to set up
-(about 2 minutes, no fingerprints or test users). Both verify every upload against the service's own
-checksum before deleting the copy on the phone.
+Settings → Cloud upload → **Dropbox** → **Set up Dropbox** → **Open Dropbox** → sign in and tap
+**Allow** → copy the code Dropbox shows → back in WitnessCam tap **Paste** → **Connect**.
 
-## One-time Dropbox setup (about 2 minutes)
+Recordings go to `Dropbox/Apps/<app name>/<date_time>/`. The app can only access its own folder,
+not the rest of your Dropbox. If the setup screen asks for an **App key**, this build has no
+built-in key: follow "Using your own Dropbox app" below.
 
-1. Go to <https://www.dropbox.com/developers/apps> and tap **Create app**.
-   - API: **Scoped access**
-   - Access: **App folder**. The app can only touch its own folder, `Dropbox/Apps/<name>/`.
-   - Name: anything unique, e.g. `WitnessCam-yourname`
-2. On the app's **Permissions** tab, tick **files.metadata.read**, **files.content.write**,
-   **sharing.write** and **sharing.read**, then press **Submit** at the bottom. Do this *before* connecting, because
-   permissions added later need a reconnect.
-3. On the **Settings** tab, copy the **App key**. You don't need the App secret.
-4. In WitnessCam: Settings → Upload to: **Dropbox** → **Set up Dropbox**. Paste the key, tap
-   **Open Dropbox**, sign in and tap **Allow**, then copy the code Dropbox shows. Go back to the app,
-   tap **Paste** and then **Connect**.
+Then, in Settings:
+- **Text alerts**: add emergency contacts and tap **Allow SMS**. On Android 13+ Android blocks SMS for
+  apps installed from a file until you allow it: App info → ⋮ → *Allow restricted settings* →
+  Permissions → SMS → Allow. The app walks you through it.
+- **Stop protection**: set a PIN.
+- **Allow background uploads**, so Android's battery saver doesn't pause uploads.
+- Add the home-screen widget or the Quick Settings tile, then make a test recording and check that it
+  appears in Dropbox.
 
-Each video chunk gets a small `.json` file next to it holding its SHA-256, start time and GPS position.
-The app stays in Dropbox's "development" status, which is fine for personal use.
+### Using your own Dropbox app
 
-## One-time Google Drive setup (about 10 minutes)
+Needed only if the setup screen asks for an App key.
 
-Google requires every app that uses Drive to be registered. Because this is your personal app, you
-register it under your own Google account:
+1. Go to <https://www.dropbox.com/developers/apps> and tap **Create app**: **Scoped access**,
+   **App folder**, and any unique name.
+2. On the **Permissions** tab tick **files.metadata.read**, **files.content.write**,
+   **sharing.write** and **sharing.read**, then press **Submit**.
+3. Copy the **App key** from the **Settings** tab into WitnessCam's Dropbox setup screen.
+
+## Google Drive (advanced)
+
+Google Drive needs a Google Cloud project that lists each user, so it's mainly for the maintainer
+and people they add as test users. Most people should use Dropbox. To set it up:
 
 1. Go to <https://console.cloud.google.com/> and create a project (e.g. "WitnessCam").
 2. **APIs & Services → Library**: search for **Google Drive API** and click **Enable**.
@@ -89,11 +98,13 @@ register it under your own Google account:
 4. **APIs & Services → Credentials → Create credentials → OAuth client ID**:
    - Application type: **Android**
    - Package name: `com.oooshk.witnesscam`
-   - SHA-1 certificate fingerprint: `4B:B7:10:AC:BB:C9:B5:6D:9D:0F:F1:D0:B9:8A:21:47:E5:CC:AF:1B`
-5. Install the app, tap **Connect Google Drive** and approve access.
+   - SHA-1 certificate fingerprint: `BB:A6:BC:C5:7B:D7:FE:F0:CB:25:47:31:14:6E:17:3D:CC:02:7C:58`
+     (the release key). For local debug builds, add a second Android client with
+     `4B:B7:10:AC:BB:C9:B5:6D:9D:0F:F1:D0:B9:8A:21:47:E5:CC:AF:1B`.
+5. In WitnessCam choose Settings → Cloud upload → **Google Drive**, tap **Connect Google Drive** and
+   approve access.
 
-The SHA-1 belongs to `app/debug.keystore`, which is committed so local and CI builds are signed the
-same way. If you fork this repo or publish the app, generate your own keystore and register its SHA-1 instead.
+If you fork this repo, create your own release key and register its SHA-1 instead.
 
 > In "Testing" mode Google may ask you to re-approve access every 7 days. If uploads stop, open the
 > app: it will show **Connect Google Drive** again, and you'll get a notification. Publishing the
@@ -135,12 +146,32 @@ same way. If you fork this repo or publish the app, generate your own keystore a
   after a verified upload" in Settings.
 - If the phone is powered off or force-stopped mid-chunk, that last chunk may be lost.
 
+## Disclaimer
+
+WitnessCam is provided as is, with no warranty (see LICENSE). It can fail: phones run out of battery
+or storage, networks drop, phones get seized or destroyed, and uploads can be delayed. Don't rely on
+it as your only protection. Test it on your own phone before you need it.
+
 ## Legal note
 
 This is not legal advice. In the US, several federal appeals courts have recognized a First Amendment
 right to record police performing their duties in public, but laws differ by state (for example audio
 consent laws and "buffer zone" laws), and recording is never a reason to interfere with an officer's
 lawful orders. Check the laws where you live and drive.
+
+## For the maintainer: releases
+
+- Releases are signed with a private key stored encrypted at `app/signing/release.jks.enc`. CI
+  decrypts it using the **`RELEASE_KEY_PASSPHRASE`** repository secret (Settings → Secrets and
+  variables → Actions → Secrets). Without that secret, CI builds but publishes nothing. **Keep the
+  passphrase safe**: if it's lost, no further updates can be installed over existing copies.
+- Optional **`DROPBOX_APP_KEY`** repository *variable* (same page, Variables tab): your Dropbox app's
+  key, built into the app so users don't need their own Dropbox app. Raise the app's limits in the
+  Dropbox App Console (apply for production) if more than 500 people link it.
+- Google Drive: add an Android OAuth client for the release certificate SHA-1
+  `BB:A6:BC:C5:7B:D7:FE:F0:CB:25:47:31:14:6E:17:3D:CC:02:7C:58` (package `com.oooshk.witnesscam`).
+- `app/debug.keystore` is only for local development builds. Anyone can see it, so never publish
+  builds signed with it.
 
 ## Project layout
 

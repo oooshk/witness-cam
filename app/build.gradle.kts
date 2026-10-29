@@ -15,6 +15,11 @@ android {
         val build = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
         versionCode = build
         versionName = "build $build"
+
+        // Optional built-in Dropbox app key (a public identifier; sign-in uses PKCE, no secret).
+        // Set the DROPBOX_APP_KEY repository variable so users don't need their own Dropbox app.
+        val dropboxKey = System.getenv("DROPBOX_APP_KEY")?.trim().orEmpty()
+        buildConfigField("String", "DROPBOX_APP_KEY", "\"$dropboxKey\"")
     }
 
     signingConfigs {
@@ -26,6 +31,18 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+        // The release key is committed encrypted (signing/release.jks.enc); CI decrypts it to
+        // RELEASE_KEYSTORE using the RELEASE_KEY_PASSPHRASE secret, which is also its password.
+        val releaseStore = System.getenv("RELEASE_KEYSTORE")
+        val releasePass = System.getenv("RELEASE_KEY_PASSPHRASE")
+        if (releaseStore != null && releasePass != null) {
+            create("release") {
+                storeFile = file(releaseStore)
+                storePassword = releasePass
+                keyAlias = "witnesscam"
+                keyPassword = releasePass
+            }
+        }
     }
 
     buildTypes {
@@ -34,7 +51,9 @@ android {
         }
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("debug")
+            // Without the release key (local builds) fall back to the debug key; CI never
+            // publishes such a build.
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
     }
 
@@ -47,6 +66,7 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 }
 

@@ -23,6 +23,7 @@
             android:text="@string/dropbox_disconnect" />
 
         <TextView
+            android:id="@+id/step1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
@@ -30,6 +31,7 @@
             android:textAppearance="?attr/textAppearanceBodyMedium" />
 
         <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/app_key_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
