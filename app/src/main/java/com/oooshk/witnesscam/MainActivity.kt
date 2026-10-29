@@ -71,7 +71,7 @@ class MainActivity : AppCompatActivity() {
         }
         binding.settingsButton.setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
         binding.reviewButton.setOnClickListener { startActivity(Intent(this, ReviewActivity::class.java)) }
-        binding.driveButton.setOnClickListener { signInToDropbox(this) }
+        binding.cloudButton.setOnClickListener { signInToDropbox(this) }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -110,7 +110,7 @@ class MainActivity : AppCompatActivity() {
         val locked = getSystemService(KeyguardManager::class.java).isKeyguardLocked
         binding.settingsButton.isVisible = !locked
         binding.reviewButton.isVisible = !locked
-        binding.driveButton.isVisible = !locked && !Cloud.isConnected(this)
+        binding.cloudButton.isVisible = !locked && !Cloud.isConnected(this)
         RecordingService.notifyUploadProgress(this)
         // Opening the app is a good moment to push anything still waiting.
         if (Cloud.isConnected(this) && ChunkStore.pendingCount(this) > 0) {
@@ -197,7 +197,7 @@ class MainActivity : AppCompatActivity() {
         // Back from approving access in Dropbox?
         if (DropboxAuth.finishSignIn(this)) {
             Toast.makeText(this, R.string.dropbox_connected, Toast.LENGTH_SHORT).show()
-            binding.driveButton.isVisible = false
+            binding.cloudButton.isVisible = false
             lifecycleScope.launch { UploadWorker.uploadNow(this@MainActivity) }
         }
     }
