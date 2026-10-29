@@ -101,7 +101,6 @@ class UploadWorker(context: Context, params: WorkerParameters) : CoroutineWorker
     companion object {
         private const val TAG = "UploadWorker"
         private const val UNIQUE = "witnesscam-upload"
-        const val ROOT_FOLDER = "WitnessCam"
 
         fun enqueue(context: Context) = enqueue(context, ExistingWorkPolicy.APPEND_OR_REPLACE)
 

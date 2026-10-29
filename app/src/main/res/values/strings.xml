@@ -13,10 +13,6 @@
     <string name="widget_double_tap">Widget needs two taps to start or stop (prevents accidental presses)</string>
     <string name="idle_hint">Tap the red button to start recording. Video is stamped with the date, time and location, and uploaded to your Google Drive every few seconds.</string>
 
-    <string name="connect_drive">Connect Google Drive</string>
-    <string name="drive_connected">Google Drive connected</string>
-    <string name="drive_not_connected">Google Drive not connected. Recordings stay on the phone until you connect it.</string>
-    <string name="drive_failed">Couldn\'t connect Google Drive: %1$s</string>
     <string name="warn_cloud_not_connected">Cloud upload isn\'t connected. Recording only to this phone.</string>
 
     <string name="cams_dual">Front + rear</string>
@@ -83,27 +79,6 @@
     <string name="test_sent">Test text sent</string>
     <string name="test_failed">Add a contact and allow SMS permission first</string>
 
-    <string name="cloud_section">Upload to</string>
-    <string name="provider_google">Google Drive</string>
-    <string name="provider_dropbox">Dropbox</string>
-    <string name="connect_dropbox">Connect Dropbox</string>
-    <string name="dropbox_setup">Set up Dropbox</string>
-    <string name="dropbox_status_connected">Dropbox connected</string>
-    <string name="dropbox_status_not_connected">Dropbox not connected. Recordings stay on the phone until you connect it.</string>
-    <string name="dropbox_disconnect">Disconnect Dropbox</string>
-    <string name="dropbox_step1">1. Paste the App key from your Dropbox app\'s Settings page (see the README for creating the app).</string>
-    <string name="dropbox_app_key">App key</string>
-    <string name="dropbox_step2">2. Open Dropbox, sign in and tap Allow. Dropbox then shows an access code.</string>
-    <string name="dropbox_open">Open Dropbox</string>
-    <string name="dropbox_step3">3. Copy that code, come back here and paste it.</string>
-    <string name="dropbox_code">Access code</string>
-    <string name="dropbox_paste">Paste</string>
-    <string name="dropbox_connect">Connect</string>
-    <string name="dropbox_connected">Dropbox connected</string>
-    <string name="dropbox_failed">Couldn\'t connect: %1$s</string>
-    <string name="dropbox_key_required">Enter the app key first</string>
-    <string name="dropbox_code_required">Paste the code Dropbox showed you</string>
-    <string name="no_browser">No web browser found to open Dropbox</string>
 
     <string name="recordings">Recordings</string>
     <string name="review_empty">No recordings yet.</string>
@@ -147,7 +122,7 @@
     <string name="battery_honor">On Honor/Huawei phones also open Android Settings → Battery → App launch (or Apps → WitnessCam → Battery) → turn off \"Manage automatically\" and turn on Auto-launch, Secondary launch and Run in background.</string>
 
     <string name="section_cloud">Cloud upload</string>
-    <string name="section_cloud_summary">Where recordings go and how they get there.</string>
+    <string name="section_cloud_summary">Recordings upload to your Dropbox as they\'re made.</string>
     <string name="background_heading">Background uploads</string>
     <string name="section_recording">Recording</string>
     <string name="section_recording_summary">Cameras and clip length.</string>
@@ -160,4 +135,15 @@
     <string name="pin_new_help">Needed to stop a recording and to open Settings and Recordings. Leave blank to keep the current PIN.</string>
     <string name="location_update_short">Location updates every N minutes</string>
     <string name="location_update_help">While recording. 0 = off.</string>
+
+    <string name="connect_dropbox">Sign in with Dropbox</string>
+    <string name="dropbox_sign_in">Sign in with Dropbox</string>
+    <string name="dropbox_sign_out">Sign out</string>
+    <string name="dropbox_sign_out_title">Sign out of Dropbox?</string>
+    <string name="dropbox_sign_out_message">New recordings will stay on this phone until you sign in again. Footage already in Dropbox isn\'t affected.</string>
+    <string name="dropbox_connected">Dropbox connected</string>
+    <string name="dropbox_status_connected">Connected to Dropbox</string>
+    <string name="dropbox_status_connected_as">Connected to Dropbox as %1$s</string>
+    <string name="dropbox_status_not_connected">Not signed in. Recordings stay on this phone until you sign in to Dropbox.</string>
+    <string name="dropbox_no_key">This build of WitnessCam can\'t connect to Dropbox (no app key). Download the official build from GitHub.</string>
 </resources>

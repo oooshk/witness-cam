@@ -30,7 +30,6 @@ object ChunkStore {
     fun partFile(session: File, index: Int, camera: String) =
         File(session, "seg_%04d_%s.mp4.part".format(index, camera))
     fun metaFile(chunk: File) = File(chunk.parentFile, chunk.name.substringBefore('.') + ".json")
-    fun folderIdFile(session: File) = File(session, ".drive_folder_id")
 
     fun writeMeta(chunk: File, meta: JSONObject) = metaFile(chunk).writeText(meta.toString())
     fun readMeta(chunk: File): JSONObject =

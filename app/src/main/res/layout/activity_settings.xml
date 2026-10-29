@@ -37,38 +37,19 @@
                         android:text="@string/section_cloud_summary" />
 
                     <TextView
-                        style="@style/SettingsSubheading"
-                        android:text="@string/cloud_section" />
-
-                    <RadioGroup
-                        android:id="@+id/provider_group"
+                        android:id="@+id/cloud_status"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-                        <RadioButton
-                            android:id="@+id/provider_google"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="16dp"
-                            android:text="@string/provider_google" />
-                        <RadioButton
-                            android:id="@+id/provider_dropbox"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/provider_dropbox" />
-                    </RadioGroup>
-
-                    <TextView
-                        style="@style/SettingsNote"
-                        android:id="@+id/drive_status" />
+                        android:layout_marginTop="8dp"
+                        android:textAppearance="?attr/textAppearanceBodyMedium" />
 
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/dropbox_setup"
+                        android:id="@+id/dropbox_sign_in"
                         style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="@string/dropbox_setup" />
+                        android:text="@string/dropbox_sign_in" />
 
                     <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/wifi_only"

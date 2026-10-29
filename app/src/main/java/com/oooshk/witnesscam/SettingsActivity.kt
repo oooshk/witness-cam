@@ -19,6 +19,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.oooshk.witnesscam.databinding.ActivitySettingsBinding
@@ -79,13 +83,20 @@ class SettingsActivity : AppCompatActivity() {
         binding.smsOnStop.isChecked = prefs.smsOnStop
         binding.locationMinutes.setText(prefs.locationUpdateMinutes.toString())
         binding.shareLink.isChecked = prefs.shareFootageLink
-        binding.providerGroup.check(if (prefs.cloudProvider == Cloud.DROPBOX) R.id.provider_dropbox else R.id.provider_google)
-        binding.providerGroup.setOnCheckedChangeListener { _, id ->
-            prefs.cloudProvider = if (id == R.id.provider_dropbox) Cloud.DROPBOX else Cloud.GOOGLE_DRIVE
-            renderCloudStatus()
-        }
-        binding.dropboxSetup.setOnClickListener {
-            startActivity(Intent(this, DropboxConnectActivity::class.java))
+        binding.dropboxSignIn.setOnClickListener {
+            if (Cloud.isConnected(this)) {
+                MaterialAlertDialogBuilder(this)
+                    .setTitle(R.string.dropbox_sign_out_title)
+                    .setMessage(R.string.dropbox_sign_out_message)
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .setPositiveButton(R.string.dropbox_sign_out) { _, _ ->
+                        DropboxAuth.signOut(this)
+                        renderCloudStatus()
+                    }
+                    .show()
+            } else {
+                signInToDropbox(this)
+            }
         }
         binding.storagePath.text = getString(R.string.storage_path, ChunkStore.root(this).absolutePath)
         renderPinStatus()
@@ -118,16 +129,21 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun renderCloudStatus() {
-        val dropbox = prefs.cloudProvider == Cloud.DROPBOX
-        binding.driveStatus.setText(
-            when {
-                dropbox && Cloud.isConnected(this) -> R.string.dropbox_status_connected
-                dropbox -> R.string.dropbox_status_not_connected
-                Cloud.isConnected(this) -> R.string.drive_connected
-                else -> R.string.drive_not_connected
+        if (DropboxAuth.finishSignIn(this)) {
+            Toast.makeText(this, R.string.dropbox_connected, Toast.LENGTH_SHORT).show()
+            UploadWorker.enqueue(this)
+        }
+        val connected = Cloud.isConnected(this)
+        binding.dropboxSignIn.setText(if (connected) R.string.dropbox_sign_out else R.string.dropbox_sign_in)
+        binding.cloudStatus.setText(if (connected) R.string.dropbox_status_connected else R.string.dropbox_status_not_connected)
+        if (connected) {
+            lifecycleScope.launch {
+                val name = withContext(Dispatchers.IO) { DropboxAuth.accountName(this@SettingsActivity) }
+                if (name != null && Cloud.isConnected(this@SettingsActivity)) {
+                    binding.cloudStatus.text = getString(R.string.dropbox_status_connected_as, name)
+                }
             }
-        )
-        binding.dropboxSetup.isVisible = dropbox
+        }
     }
 
     private fun renderPinStatus() {

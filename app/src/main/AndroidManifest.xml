@@ -60,10 +60,24 @@
             android:exported="false"
             android:theme="@style/Theme.WitnessCam.Fullscreen" />
 
+        <!-- Dropbox sign-in: Dropbox returns here via the db-<app key> scheme. -->
         <activity
-            android:name=".DropboxConnectActivity"
-            android:exported="false"
-            android:label="@string/provider_dropbox" />
+            android:name="com.dropbox.core.android.AuthActivity"
+            android:configChanges="orientation|keyboard"
+            android:exported="true"
+            android:launchMode="singleTask">
+            <intent-filter>
+                <data android:scheme="db-${dropboxKey}" />
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <!-- Lets the Dropbox app return the result on newer Android versions. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
 
         <activity
             android:name=".SettingsActivity"

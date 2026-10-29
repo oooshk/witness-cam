@@ -16,15 +16,17 @@ android {
         versionCode = build
         versionName = "build $build"
 
-        // Optional built-in Dropbox app key (a public identifier; sign-in uses PKCE, no secret).
-        // Set the DROPBOX_APP_KEY repository variable so users don't need their own Dropbox app.
-        val dropboxKey = System.getenv("DROPBOX_APP_KEY")?.trim().orEmpty()
+        // Dropbox app key: a public identifier (sign-in uses PKCE, no secret), built in so users
+        // just tap "Sign in with Dropbox". Set in gradle.properties; DROPBOX_APP_KEY overrides it.
+        val dropboxKey = (System.getenv("DROPBOX_APP_KEY")?.takeIf { it.isNotBlank() }
+            ?: project.findProperty("dropboxAppKey")?.toString()).orEmpty().trim()
         buildConfigField("String", "DROPBOX_APP_KEY", "\"$dropboxKey\"")
+        manifestPlaceholders["dropboxKey"] = dropboxKey
     }
 
     signingConfigs {
-        // A fixed debug key checked into the repo so every build (local or CI) has the same
-        // SHA-1, which the Google Cloud OAuth client for Drive access is registered against.
+        // A fixed debug key for local development builds only. It's public, so CI never
+        // publishes builds signed with it.
         getByName("debug") {
             storeFile = file("debug.keystore")
             storePassword = "android"
@@ -92,7 +94,7 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer:1.5.1")
     implementation("androidx.media3:media3-ui:1.5.1")
 
-    implementation("com.google.android.gms:play-services-auth:21.3.0")
+    implementation("com.dropbox.core:dropbox-android-sdk:7.0.0")
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")

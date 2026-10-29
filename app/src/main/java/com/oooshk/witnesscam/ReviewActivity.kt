@@ -92,13 +92,8 @@ class ReviewActivity : AppCompatActivity() {
     }
 
     private fun openInCloud(session: ChunkStore.SessionSummary) {
-        val url = if (Prefs(this).cloudProvider == Cloud.DROPBOX) {
-            "https://www.dropbox.com/home/Apps"
-        } else {
-            ChunkStore.folderIdFile(session.dir).takeIf { it.exists() }?.readText()?.trim()
-                ?.let { DriveFolders.folderLink(it) } ?: "https://drive.google.com/drive/my-drive"
-        }
-        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        // Recordings live in the app's folder: Dropbox/Apps/<app name>/<session>/.
+        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.dropbox.com/home/Apps")))
     }
 
     private fun confirmDelete(session: ChunkStore.SessionSummary) {

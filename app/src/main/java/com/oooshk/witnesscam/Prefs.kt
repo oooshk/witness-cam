@@ -70,24 +70,18 @@ class Prefs(context: Context) {
 
     var alertMessage: String
         get() = sp.getString("alert_message", null)
-            ?: "I've been stopped by police and am recording. Video is uploading to my Google Drive."
+            ?: "I've been stopped by police and am recording. Video is uploading to my Dropbox."
         // Blank resets to the default message.
         set(v) = sp.edit().apply { if (v.isBlank()) remove("alert_message") else putString("alert_message", v) }.apply()
 
-    var driveConnected: Boolean
-        get() = sp.getBoolean("drive_connected", false)
-        set(v) = sp.edit().putBoolean("drive_connected", v).apply()
+    /** Set while the user is away approving access in Dropbox. */
+    var dropboxSignInPending: Boolean
+        get() = sp.getBoolean("dropbox_sign_in_pending", false)
+        set(v) = sp.edit().putBoolean("dropbox_sign_in_pending", v).apply()
 
-    /** Which cloud uploads go to: [Cloud.GOOGLE_DRIVE] or [Cloud.DROPBOX]. */
-    var cloudProvider: String
-        // Dropbox by default: it works for anyone, while Google Drive needs the maintainer's
-        // Google Cloud project to list (or publish for) each user.
-        get() = sp.getString("cloud_provider", Cloud.DROPBOX) ?: Cloud.DROPBOX
-        set(v) = sp.edit().putString("cloud_provider", v).apply()
-
-    var dropboxAppKey: String?
-        get() = sp.getString("dropbox_app_key", null)
-        set(v) = sp.edit().putString("dropbox_app_key", v?.trim()).apply()
+    var dropboxAccountName: String?
+        get() = sp.getString("dropbox_account_name", null)
+        set(v) = sp.edit().putString("dropbox_account_name", v).apply()
 
     var dropboxRefreshToken: String?
         get() = sp.getString("dropbox_refresh_token", null)
@@ -101,11 +95,6 @@ class Prefs(context: Context) {
         get() = sp.getLong("dropbox_access_expiry", 0)
         set(v) = sp.edit().putLong("dropbox_access_expiry", v).apply()
 
-    /** PKCE verifier for a Dropbox sign-in that's waiting for the user to paste the code. */
-    var dropboxCodeVerifier: String?
-        get() = sp.getString("dropbox_code_verifier", null)
-        set(v) = sp.edit().putString("dropbox_code_verifier", v).apply()
-
     /** Why the last upload attempt failed, or null if the last one succeeded. */
     var lastUploadError: String?
         get() = sp.getString("last_upload_error", null)
@@ -114,11 +103,6 @@ class Prefs(context: Context) {
     var lastUploadAtMs: Long
         get() = sp.getLong("last_upload_at", 0)
         set(v) = sp.edit().putLong("last_upload_at", v).apply()
-
-    /** Cached id of the top-level "WitnessCam" folder in Drive. */
-    var driveRootFolderId: String?
-        get() = sp.getString("drive_root_folder", null)
-        set(v) = sp.edit().putString("drive_root_folder", v).apply()
 
     /** Text contacts again when recording stops. */
     var smsOnStop: Boolean
@@ -130,7 +114,7 @@ class Prefs(context: Context) {
         get() = sp.getInt("location_update_minutes", 0)
         set(v) = sp.edit().putInt("location_update_minutes", v.coerceIn(0, 120)).apply()
 
-    /** Make the session's Drive folder viewable by link and text that link to contacts. */
+    /** Make the session's Dropbox folder viewable by link and text that link to contacts. */
     var shareFootageLink: Boolean
         get() = sp.getBoolean("share_footage_link", false)
         set(v) = sp.edit().putBoolean("share_footage_link", v).apply()

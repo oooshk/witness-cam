@@ -9,7 +9,6 @@ import android.os.Bundle
 import android.view.View
 import android.view.WindowManager
 import android.widget.Toast
-import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -17,7 +16,6 @@ import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.google.android.gms.auth.api.identity.Identity
 import com.oooshk.witnesscam.databinding.ActivityMainBinding
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -29,6 +27,15 @@ fun shareDiagnostics(activity: android.app.Activity) {
         .putExtra(Intent.EXTRA_SUBJECT, "WitnessCam diagnostics")
         .putExtra(Intent.EXTRA_TEXT, Diagnostics.report(activity))
     activity.startActivity(Intent.createChooser(send, activity.getString(R.string.share_details)))
+}
+
+/** Starts Dropbox sign-in; the calling screen completes it in onResume via [DropboxAuth.finishSignIn]. */
+fun signInToDropbox(activity: android.app.Activity) {
+    if (!DropboxAuth.available) {
+        Toast.makeText(activity, R.string.dropbox_no_key, Toast.LENGTH_LONG).show()
+        return
+    }
+    DropboxAuth.startSignIn(activity)
 }
 
 class MainActivity : AppCompatActivity() {
@@ -44,17 +51,6 @@ class MainActivity : AppCompatActivity() {
                 RecordingService.start(this)
             } else if (!hasCorePermissions()) {
                 Toast.makeText(this, R.string.error_permissions, Toast.LENGTH_LONG).show()
-            }
-        }
-
-    private val driveConsentLauncher =
-        registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
-            try {
-                val data = result.data ?: throw IllegalStateException("cancelled")
-                val auth = Identity.getAuthorizationClient(this).getAuthorizationResultFromIntent(data)
-                onDriveAuthorized(auth.accessToken != null)
-            } catch (e: Exception) {
-                onDriveAuthorized(false, e.message)
             }
         }
 
@@ -75,13 +71,7 @@ class MainActivity : AppCompatActivity() {
         }
         binding.settingsButton.setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
         binding.reviewButton.setOnClickListener { startActivity(Intent(this, ReviewActivity::class.java)) }
-        binding.driveButton.setOnClickListener {
-            if (Cloud.provider(this) == Cloud.DROPBOX) {
-                startActivity(Intent(this, DropboxConnectActivity::class.java))
-            } else {
-                connectDrive()
-            }
-        }
+        binding.driveButton.setOnClickListener { signInToDropbox(this) }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -121,9 +111,6 @@ class MainActivity : AppCompatActivity() {
         binding.settingsButton.isVisible = !locked
         binding.reviewButton.isVisible = !locked
         binding.driveButton.isVisible = !locked && !Cloud.isConnected(this)
-        binding.driveButton.setText(
-            if (Cloud.provider(this) == Cloud.DROPBOX) R.string.connect_dropbox else R.string.connect_drive
-        )
         RecordingService.notifyUploadProgress(this)
         // Opening the app is a good moment to push anything still waiting.
         if (Cloud.isConnected(this) && ChunkStore.pendingCount(this) > 0) {
@@ -205,26 +192,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun connectDrive() {
-        Identity.getAuthorizationClient(this).authorize(DriveAuth.request())
-            .addOnSuccessListener { result ->
-                if (result.hasResolution()) {
-                    driveConsentLauncher.launch(IntentSenderRequest.Builder(result.pendingIntent!!.intentSender).build())
-                } else {
-                    onDriveAuthorized(true)
-                }
-            }
-            .addOnFailureListener { e -> onDriveAuthorized(false, e.message) }
-    }
-
-    private fun onDriveAuthorized(ok: Boolean, error: String? = null) {
-        prefs.driveConnected = ok
-        binding.driveButton.isVisible = !ok
-        if (ok) {
-            Toast.makeText(this, R.string.drive_connected, Toast.LENGTH_SHORT).show()
-            UploadWorker.enqueue(this)
-        } else {
-            Toast.makeText(this, getString(R.string.drive_failed, error ?: "cancelled"), Toast.LENGTH_LONG).show()
+    override fun onResume() {
+        super.onResume()
+        // Back from approving access in Dropbox?
+        if (DropboxAuth.finishSignIn(this)) {
+            Toast.makeText(this, R.string.dropbox_connected, Toast.LENGTH_SHORT).show()
+            binding.driveButton.isVisible = false
+            lifecycleScope.launch { UploadWorker.uploadNow(this@MainActivity) }
         }
     }
 
